@@ -13,7 +13,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Thermometer,
-  Brain,
+  File,
   Heart,
   Eye,
   Camera,
@@ -51,7 +51,7 @@ export function VTMADashboard() {
     switch (type) {
       case 'upload': return <Camera className="w-4 h-4" />;
       case 'report': return <FileText className="w-4 h-4" />;
-      case 'analysis': return <Brain className="w-4 h-4" />;
+      case 'analysis': return <File className="w-4 h-4" />;
       default: return <Activity className="w-4 h-4" />;
     }
   };
@@ -162,7 +162,7 @@ export function VTMADashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">AI Nauwkeurigheid</CardTitle>
-            <Brain className="h-4 w-4 text-muted-foreground" />
+            <File className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">-</div>
@@ -202,7 +202,7 @@ export function VTMADashboard() {
               </div>
               
               <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                <Brain className="w-6 h-6 text-purple-600 mb-2" />
+                <File className="w-6 h-6 text-purple-600 mb-2" />
                 <p className="text-xs font-medium text-purple-900">AI Analyse</p>
                 <p className="text-xs text-purple-700">Automatische diagnose</p>
               </div>

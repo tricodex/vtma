@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +10,7 @@ import {
   Thermometer, 
   Upload, 
   FileImage, 
-  Brain, 
+  File, 
   Activity, 
   Settings, 
   FileText, 
@@ -20,15 +21,19 @@ import {
   Camera,
   User,
   Search,
-  Languages
+  Languages,
+  Plus
 } from 'lucide-react';
 import { VTMAUpload } from '@/components/vtma/vtma-upload';
-import { VTMAPatientForm } from '@/components/vtma/vtma-patient-form';
 import { VTMAReportViewer } from '@/components/vtma/vtma-report-viewer';
+import { PatientSelector } from '@/components/vtma/vtma-patient-selector';
+import { DemoPatient } from '@/lib/demo-data';
 
 export default function VTMAPage() {
+  const router = useRouter();
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [activeView, setActiveView] = useState('workflow');
+  const [selectedPatient, setSelectedPatient] = useState<DemoPatient | null>(null);
 
   const sidebarItems = [
     { 
@@ -69,18 +74,39 @@ export default function VTMAPage() {
     { id: 'help', label: 'Hulp', icon: HelpCircle }
   ];
 
+  const handleAddNewPatient = () => {
+    router.push('/patient/add');
+  };
+
+  const handlePatientSelect = (patient: DemoPatient | null) => {
+    setSelectedPatient(patient);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       {/* Compact Header */}
       <header className="bg-white border-b border-gray-200 h-16 flex items-center px-6">
-        <div className="flex items-center space-x-3 flex-1">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-            <Thermometer className="w-5 h-5 text-white" />
+        <div className="flex items-center space-x-6 flex-1">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+              <Thermometer className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">VTMA</h1>
+              <p className="text-xs text-gray-500">Veterinaire Thermografie</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">VTMA</h1>
-            <p className="text-xs text-gray-500">Veterinaire Thermografie</p>
-          </div>
+          
+          {/* Patient Selector in Header */}
+          {activeView === 'workflow' && (
+            <div className="flex-1 max-w-md">
+              <PatientSelector
+                selectedPatient={selectedPatient}
+                onPatientSelect={handlePatientSelect}
+                onAddNew={handleAddNewPatient}
+              />
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" className="bg-blue-50 border-blue-200 text-blue-700">
@@ -174,7 +200,7 @@ export default function VTMAPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Upload Section */}
                 <Card className="border-2 border-blue-200">
                   <CardHeader className="pb-4">
@@ -194,50 +220,56 @@ export default function VTMAPage() {
                   </CardContent>
                 </Card>
 
-                {/* Patient Form Section */}
-                <Card className="border-2 border-green-200">
+                {/* Report Section */}
+                <Card className="border-2 border-purple-200">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center space-x-2 text-lg">
-                      <Stethoscope className="w-5 h-5 text-green-600" />
-                      <span>2. Patiëntgegevens Invoeren</span>
+                      <File className="w-5 h-5 text-purple-600" />
+                      <span>2. Rapport Generatie</span>
+                      {selectedPatient && (
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          Patiënt: {selectedPatient.patientName}
+                        </Badge>
+                      )}
                     </CardTitle>
                     <CardDescription>
-                      Voer patiëntgegevens in volgens AAT richtlijnen
+                      Geautomatiseerde rapportgeneratie gebaseerd op thermografische analyse
+                      {selectedPatient && (
+                        <span className="block text-xs mt-1 text-blue-600">
+                          Gebruikt patiëntgegevens van {selectedPatient.patientName} voor betere AI-analyse
+                        </span>
+                      )}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="max-h-96 overflow-y-auto">
-                    <VTMAPatientForm />
+                  <CardContent>
+                    <VTMAReportViewer 
+                      uploadedImages={uploadedImages} 
+                      selectedPatient={selectedPatient}
+                    />
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Report Section - Full Width */}
-              <Card className="mt-6 border-2 border-purple-200">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center space-x-2 text-lg">
-                    <Brain className="w-5 h-5 text-purple-600" />
-                    <span>3. AI Rapport Generatie</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Geautomatiseerde rapportgeneratie gebaseerd op thermografische analyse
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <VTMAReportViewer uploadedImages={uploadedImages} />
-                </CardContent>
-              </Card>
             </div>
           )}
 
           {activeView === 'patients' && (
             <div className="p-6 max-w-7xl mx-auto">
-              <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                  Patiënten Overzicht
-                </h1>
-                <p className="text-gray-600">
-                  Overzicht van alle geregistreerde patiënten
-                </p>
+              <div className="mb-6 flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+                    Patiënten Overzicht
+                  </h1>
+                  <p className="text-gray-600">
+                    Overzicht van alle geregistreerde patiënten
+                  </p>
+                </div>
+                <Button 
+                  onClick={handleAddNewPatient}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nieuwe Patiënt
+                </Button>
               </div>
               <Card>
                 <CardContent className="p-6">
