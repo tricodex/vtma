@@ -5,25 +5,23 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { 
-  Thermometer, 
   Upload, 
   File, 
-  Activity, 
-  Settings, 
   FileText, 
   Calendar,
-  HelpCircle,
   BarChart3,
-  User,
-  Search,
-  Languages,
   Plus
 } from 'lucide-react';
 import { VTMAUpload } from '@/components/vtma/vtma-upload';
 import { VTMAReportViewer } from '@/components/vtma/vtma-report-viewer';
 import { PatientSelector } from '@/components/vtma/vtma-patient-selector';
+import { VTMASidebar } from '@/components/vtma/vtma-sidebar';
+import { VTMAHeader } from '@/components/vtma/vtma-header';
+import {
+  SidebarInset,
+  SidebarProvider,
+} from '@/components/ui/sidebar';
 import { Patient } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery } from 'convex/react';
@@ -38,44 +36,7 @@ export default function VTMAPage() {
   // Fetch all patients from Convex
   const allPatients = useQuery(api.patients.getAll) || [];
 
-  const sidebarItems = [
-    { 
-      id: 'workflow', 
-      label: 'Workflow', 
-      icon: Activity, 
-      description: 'Upload, Patiënt & Rapport'
-    },
-    { 
-      id: 'patients', 
-      label: 'Patiënten', 
-      icon: User, 
-      description: 'Patiënt overzicht'
-    },
-    { 
-      id: 'reports', 
-      label: 'Rapporten', 
-      icon: FileText, 
-      description: 'Gegenereerde rapporten'
-    },
-    { 
-      id: 'analytics', 
-      label: 'Analyse', 
-      icon: BarChart3, 
-      description: 'Statistieken & trends'
-    },
-    { 
-      id: 'calendar', 
-      label: 'Planning', 
-      icon: Calendar, 
-      description: 'Afspraken & planning'
-    }
-  ];
 
-  const secondaryItems = [
-    { id: 'search', label: 'Zoeken', icon: Search },
-    { id: 'settings', label: 'Instellingen', icon: Settings },
-    { id: 'help', label: 'Hulp', icon: HelpCircle }
-  ];
 
   const handleAddNewPatient = () => {
     router.push('/patient/add');
@@ -86,102 +47,14 @@ export default function VTMAPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Compact Header */}
-      <header className="bg-white border-b border-gray-200 h-16 flex items-center px-6">
-        <div className="flex items-center space-x-6 flex-1">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <Thermometer className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">VTMA</h1>
-              <p className="text-xs text-gray-500">Veterinaire Thermografie</p>
-            </div>
-          </div>
-          
-
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" className="bg-blue-50 border-blue-200 text-blue-700">
-            <Languages className="w-4 h-4 mr-1" />
-            NL
-          </Button>
-          <Button variant="ghost" size="sm" className="text-gray-600">
-            EN
-          </Button>
-          <Button variant="outline" size="sm">
-            <HelpCircle className="w-4 h-4 mr-2" />
-            Hulp
-          </Button>
-        </div>
-      </header>
-
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Professional Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-4">
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-              Hoofd Menu
-            </h2>
-            <nav className="space-y-1">
-              {sidebarItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = activeView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setActiveView(item.id)}
-                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5 mr-3" />
-                    <div className="text-left">
-                      <div>{item.label}</div>
-                      <div className="text-xs text-gray-400">{item.description}</div>
-                    </div>
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          <Separator />
-
-          <div className="p-4">
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-              Systeem
-            </h2>
-            <nav className="space-y-1">
-              {secondaryItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                  >
-                    <Icon className="w-4 h-4 mr-3" />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div className="mt-auto p-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                <span className="text-sm font-medium text-green-800">Systeem Online</span>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Content Area */}
+    <SidebarProvider>
+      <VTMASidebar 
+        activeView={activeView} 
+        onViewChange={setActiveView}
+        variant="inset" 
+      />
+      <SidebarInset>
+        <VTMAHeader />
         <main className="flex-1 overflow-auto">
           {activeView === 'workflow' && (
             <div className="p-6 max-w-7xl mx-auto">
@@ -518,7 +391,7 @@ export default function VTMAPage() {
             </div>
           )}
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
