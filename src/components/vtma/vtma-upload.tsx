@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useOptimistic } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,12 @@ interface UploadedFile {
 export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // React 19.1 useOptimistic for immediate feedback
+  const [optimisticFiles, setOptimisticFiles] = useOptimistic(
+    files,
+    (currentFiles, newFiles: UploadedFile[]) => [...currentFiles, ...newFiles]
+  );
 
   // Helper function to convert File to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -76,6 +83,8 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
       })
     );
 
+    // Optimistically add files immediately
+    setOptimisticFiles(newFiles);
     setFiles(prev => [...prev, ...newFiles]);
 
     // Simulate upload progress
@@ -109,6 +118,8 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
   });
 
   const removeFile = (id: string) => {
+    // Optimistically remove file for immediate feedback
+    setOptimisticFiles(optimisticFiles.filter(f => f.id !== id));
     setFiles(prev => {
       const file = prev.find(f => f.id === id);
       if (file) {
@@ -188,7 +199,7 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
               Geüploade Bestanden ({files.length})
             </h4>
             <div className="space-y-4">
-              {files.map((file) => (
+              {optimisticFiles.map((file) => (
                 <div key={file.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
                   <div className="flex-shrink-0">
                     <img 
@@ -255,7 +266,7 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
       )}
 
       {/* Analysis Button */}
-      {files.some(f => f.status === 'completed') && (
+      {optimisticFiles.some(f => f.status === 'completed') && (
         <div className="flex justify-center">
           <Button
             onClick={() => setIsAnalyzing(!isAnalyzing)}

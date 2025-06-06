@@ -38,43 +38,14 @@ interface RecentActivity {
 
 export function VTMADashboard() {
   const [stats, setStats] = useState<DashboardStats>({
-    totalPatients: 156,
-    reportsGenerated: 142,
-    avgProcessingTime: 3.2,
-    aiAccuracy: 94.7,
-    weeklyTrend: 12.5
+    totalPatients: 0,
+    reportsGenerated: 0,
+    avgProcessingTime: 0,
+    aiAccuracy: 0,
+    weeklyTrend: 0
   });
 
-  const [recentActivity] = useState<RecentActivity[]>([
-    {
-      id: '1',
-      type: 'analysis',
-      patient: 'Thunder (KWPN Ruin)',
-      timestamp: new Date(Date.now() - 30 * 60 * 1000),
-      status: 'completed'
-    },
-    {
-      id: '2',
-      type: 'upload',
-      patient: 'Bella (Duitse Herder)',
-      timestamp: new Date(Date.now() - 45 * 60 * 1000),
-      status: 'processing'
-    },
-    {
-      id: '3',
-      type: 'report',
-      patient: 'Max (Labrador)',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      status: 'completed'
-    },
-    {
-      id: '4',
-      type: 'analysis',
-      patient: 'Dancer (Friese Merrie)',
-      timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-      status: 'completed'
-    }
-  ]);
+  const [recentActivity] = useState<RecentActivity[]>([]);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -157,7 +128,7 @@ export function VTMADashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalPatients}</div>
             <p className="text-xs text-muted-foreground">
-              +{stats.weeklyTrend}% t.o.v. vorige week
+              Geen patiënten geregistreerd
             </p>
           </CardContent>
         </Card>
@@ -170,7 +141,7 @@ export function VTMADashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{stats.reportsGenerated}</div>
             <p className="text-xs text-muted-foreground">
-              Geautomatiseerde rapportage
+              Nog geen rapporten gegenereerd
             </p>
           </CardContent>
         </Card>
@@ -181,9 +152,9 @@ export function VTMADashboard() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.avgProcessingTime} min</div>
+            <div className="text-2xl font-bold">-</div>
             <p className="text-xs text-muted-foreground">
-              Per thermografisch onderzoek
+              Geen verwerkingsdata beschikbaar
             </p>
           </CardContent>
         </Card>
@@ -194,9 +165,9 @@ export function VTMADashboard() {
             <Brain className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.aiAccuracy}%</div>
+            <div className="text-2xl font-bold">-</div>
             <p className="text-xs text-muted-foreground">
-              Gevalideerd door dierenartsen
+              Nog geen AI analyses uitgevoerd
             </p>
           </CardContent>
         </Card>
@@ -212,28 +183,36 @@ export function VTMADashboard() {
               <span>Snelle Acties</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              className="w-full justify-start bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-            >
-              <Camera className="w-4 h-4 mr-2" />
-              Nieuwe Thermografische Upload
-            </Button>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-gray-600 mb-4">
+              Start met het uploaden van thermografische beelden en registreren van patiëntgegevens.
+            </p>
             
-            <Button variant="outline" className="w-full justify-start">
-              <Users className="w-4 h-4 mr-2" />
-              Patiënt Registreren
-            </Button>
-            
-            <Button variant="outline" className="w-full justify-start">
-              <FileText className="w-4 h-4 mr-2" />
-              Rapporten Bekijken
-            </Button>
-            
-            <Button variant="outline" className="w-full justify-start">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Analyse Dashboard
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <Camera className="w-6 h-6 text-blue-600 mb-2" />
+                <p className="text-xs font-medium text-blue-900">Upload Beelden</p>
+                <p className="text-xs text-blue-700">Thermografische foto's</p>
+              </div>
+              
+              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                <Users className="w-6 h-6 text-green-600 mb-2" />
+                <p className="text-xs font-medium text-green-900">Patiënt Data</p>
+                <p className="text-xs text-green-700">Registreer gegevens</p>
+              </div>
+              
+              <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                <Brain className="w-6 h-6 text-purple-600 mb-2" />
+                <p className="text-xs font-medium text-purple-900">AI Analyse</p>
+                <p className="text-xs text-purple-700">Automatische diagnose</p>
+              </div>
+              
+              <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                <FileText className="w-6 h-6 text-orange-600 mb-2" />
+                <p className="text-xs font-medium text-orange-900">Rapport</p>
+                <p className="text-xs text-orange-700">Gestandaardiseerd</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -246,27 +225,14 @@ export function VTMADashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      {getActivityIcon(activity.type)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {activity.patient}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {formatTimeAgo(activity.timestamp)}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    {getStatusBadge(activity.status)}
-                  </div>
-                </div>
-              ))}
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Activity className="w-6 h-6 text-gray-400" />
+              </div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Nog Geen Activiteit</h4>
+              <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                Activiteiten zoals uploads, analyses en rapporten worden hier weergegeven zodra u begint.
+              </p>
             </div>
           </CardContent>
         </Card>

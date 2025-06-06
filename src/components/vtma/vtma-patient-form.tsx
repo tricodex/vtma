@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import {
 
 interface PatientFormData {
   // Patiënt Identificatie
+  patientNumber: string;
   patientName: string;
   patientId: string;
   species: string;
@@ -78,6 +80,7 @@ async function submitPatientForm(prevState: PatientFormData, formData: FormData)
   
   const data: PatientFormData = {
     // Patiënt data
+    patientNumber: formData.get('patientNumber') as string,
     patientName: formData.get('patientName') as string,
     patientId: formData.get('patientId') as string,
     species: formData.get('species') as string,
@@ -135,7 +138,14 @@ async function submitPatientForm(prevState: PatientFormData, formData: FormData)
 }
 
 export function VTMAPatientForm() {
+  // Generate patient number automatically
+  const generatePatientNumber = (): string => {
+    const timestamp = Date.now().toString().slice(-6);
+    return `P${timestamp}`;
+  };
+
   const [state, formAction, isPending] = useActionState(submitPatientForm, {
+    patientNumber: generatePatientNumber(),
     patientName: '',
     patientId: '',
     species: '',
@@ -188,6 +198,20 @@ export function VTMAPatientForm() {
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
+            <Label htmlFor="patientNumber">Patiëntnummer *</Label>
+            <Input
+              id="patientNumber"
+              name="patientNumber"
+              value={state.patientNumber}
+              readOnly
+              className="bg-gray-50 font-mono text-sm"
+            />
+            <p className="text-xs text-gray-500">
+              Automatisch gegenereerd patiëntnummer
+            </p>
+          </div>
+          
+          <div className="space-y-2">
             <Label htmlFor="patientName">Patiëntnaam *</Label>
             <Input
               id="patientName"
@@ -196,6 +220,11 @@ export function VTMAPatientForm() {
               defaultValue={state.patientName}
               required
             />
+            {state.patientName && state.species && state.breed && (
+              <p className="text-xs text-green-600 font-medium">
+                Weergave: {state.patientNumber} ({state.patientName} + {state.species} + {state.breed})
+              </p>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -514,14 +543,7 @@ export function VTMAPatientForm() {
 
       {/* Submit Button */}
       <div className="flex justify-center">
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 min-w-48"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isPending ? 'Opslaan...' : 'Patiëntgegevens Opslaan'}
-        </Button>
+        <SubmitButton isPending={isPending} />
       </div>
 
       {state.patientName && !state.errors && (
@@ -533,6 +555,23 @@ export function VTMAPatientForm() {
         </Alert>
       )}
     </form>
+  );
+}
+
+// React 19.1 Enhanced Submit Button with useFormStatus
+function SubmitButton({ isPending }: { isPending: boolean }) {
+  const { pending: formPending, data } = useFormStatus();
+  const isSubmitting = isPending || formPending;
+  
+  return (
+    <Button
+      type="submit"
+      disabled={isSubmitting}
+      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 min-w-48"
+    >
+      <Save className="w-4 h-4 mr-2" />
+      {isSubmitting ? 'Opslaan...' : 'Patiëntgegevens Opslaan'}
+    </Button>
   );
 }
 

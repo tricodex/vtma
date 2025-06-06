@@ -175,58 +175,7 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
     `.trim();
   };
 
-  // Mock report for demo purposes
-  const mockReport: AIAnalysisResult = {
-    patientIdentification: {
-      title: 'Patiënt Identificatie',
-      content: 'Paard: Thunder, 8 jaar, KWPN ruin, Eigenaar: J. Jansen',
-      confidence: 100,
-      findings: []
-    },
-    anamnesis: {
-      title: 'Anamnese',
-      content: 'Hoofdklacht: Verzet tijdens dressuurwerk, gevoeligheid bij borstelen rug. Duur: 3 weken. Geen eerdere behandelingen.',
-      confidence: 95,
-      findings: ['Acute symptomen', 'Gedragsverandering', 'Lokale gevoeligheid']
-    },
-    protocolConditions: {
-      title: 'Onderzoeksomstandigheden',
-      content: 'Thermografisch onderzoek uitgevoerd onder gecontroleerde omstandigheden. Omgevingstemperatuur: 20°C, Emissiviteit: 0.98, Camera afstand: 1.5m.',
-      confidence: 100,
-      findings: ['Optimale omstandigheden', 'Gecalibreerde apparatuur']
-    },
-    thermographicFindings: {
-      title: 'Thermografische Bevindingen',
-      content: 'Significante temperatuursverhoging (2.3°C) ter hoogte van T15-T18 thoracale wervelkolom. Asymmetrisch warmtepatroon aan weerszijden van de schoft.',
-      confidence: 87,
-      findings: [
-        'Hyperthermie T15-T18 gebied (+2.3°C)',
-        'Asymmetrische warmteverdeling schoft',
-        'Verhoogde circulatie thoracolumbale overgang',
-        'Normale hoefontwikkeling voorvoeten'
-      ]
-    },
-    interpretation: {
-      title: 'Interpretatie',
-      content: 'De thermografische bevindingen zijn consistent met inflammatoire veranderingen in de thoracolumbale wervelkolom, mogelijk gerelateerd aan Kissing Spine syndrome.',
-      confidence: 82,
-      findings: ['Inflammatie wervelkolom', 'Mogelijk kissing spine', 'Geen acute blessures extremiteiten']
-    },
-    recommendations: {
-      title: 'Aanbevelingen',
-      content: 'Aanvullend onderzoek: Röntgen thoracolumbale wervelkolom. Behandeling: Anti-inflammatoire therapie, aangepast trainingsschema. Follow-up thermografie na 4 weken.',
-      confidence: 90,
-      findings: ['Röntgen onderzoek aanbevolen', 'Rustperiode nodig', 'Follow-up planning']
-    },
-    differentialDiagnoses: [
-      'Kissing Spine Syndrome (primair)',
-      'Spierspasmen thoracolumbaal',
-      'Zadeldruk gerelateerde inflammatie',
-      'Ligamenteuze beschadiging supraspinous ligament'
-    ],
-    urgencyLevel: 'urgent',
-    confidence: 85
-  };
+
 
   return (
     <div className="space-y-6">
@@ -300,7 +249,7 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
       </Card>
 
       {/* Generated Report */}
-      {(report || (!isAnalyzing && uploadedImages.length > 0)) && (
+      {report && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -311,13 +260,13 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
               <div className="flex items-center space-x-2">
                 <Badge variant="outline" className="flex items-center space-x-1">
                   <CheckCircle className="w-3 h-3" />
-                  <span>{(report || mockReport).confidence}% Betrouwbaar</span>
+                  <span>{report.confidence}% Betrouwbaar</span>
                 </Badge>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={downloadReport}
-                  disabled={!report && !mockReport}
+                  disabled={!report}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download
@@ -337,12 +286,12 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
               <TabsContent value="findings" className="space-y-4">
                 <ReportSectionCard
                   icon={<Thermometer className="w-5 h-5" />}
-                  section={(report || mockReport).thermographicFindings}
+                  section={report.thermographicFindings}
                   color="blue"
                 />
                 <ReportSectionCard
                   icon={<Stethoscope className="w-5 h-5" />}
-                  section={(report || mockReport).anamnesis}
+                  section={report.anamnesis}
                   color="green"
                 />
               </TabsContent>
@@ -350,7 +299,7 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
               <TabsContent value="interpretation" className="space-y-4">
                 <ReportSectionCard
                   icon={<Brain className="w-5 h-5" />}
-                  section={(report || mockReport).interpretation}
+                  section={report.interpretation}
                   color="purple"
                 />
                 
@@ -363,7 +312,7 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {(report || mockReport).differentialDiagnoses.map((diagnosis, index) => (
+                      {report.differentialDiagnoses.map((diagnosis, index) => (
                         <div key={index} className="flex items-center space-x-2">
                           <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
                             {index + 1}
@@ -379,7 +328,7 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
               <TabsContent value="recommendations" className="space-y-4">
                 <ReportSectionCard
                   icon={<TrendingUp className="w-5 h-5" />}
-                  section={(report || mockReport).recommendations}
+                  section={report.recommendations}
                   color="orange"
                 />
                 
@@ -394,14 +343,14 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
                     <CardContent>
                       <Badge 
                         variant={
-                          (report || mockReport).urgencyLevel === 'immediate' ? 'destructive' :
-                          (report || mockReport).urgencyLevel === 'urgent' ? 'default' :
+                          report.urgencyLevel === 'immediate' ? 'destructive' :
+                          report.urgencyLevel === 'urgent' ? 'default' :
                           'secondary'
                         }
                         className="text-sm"
                       >
-                        {(report || mockReport).urgencyLevel === 'immediate' ? 'Onmiddellijk' :
-                         (report || mockReport).urgencyLevel === 'urgent' ? 'Spoedig' :
+                        {report.urgencyLevel === 'immediate' ? 'Onmiddellijk' :
+                         report.urgencyLevel === 'urgent' ? 'Spoedig' :
                          'Routine'}
                       </Badge>
                     </CardContent>
@@ -427,7 +376,7 @@ Definitieve diagnose vereist altijd veterinaire beoordeling.
                 <Card>
                   <CardContent className="p-6">
                     <pre className="whitespace-pre-wrap text-sm font-mono bg-gray-50 p-4 rounded-lg overflow-auto max-h-96">
-                      {generateReportText(report || mockReport)}
+                      {generateReportText(report)}
                     </pre>
                   </CardContent>
                 </Card>
