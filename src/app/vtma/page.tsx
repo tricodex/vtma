@@ -9,16 +9,13 @@ import { Separator } from '@/components/ui/separator';
 import { 
   Thermometer, 
   Upload, 
-  FileImage, 
   File, 
   Activity, 
   Settings, 
   FileText, 
   Calendar,
   HelpCircle,
-  Stethoscope,
   BarChart3,
-  Camera,
   User,
   Search,
   Languages,
@@ -27,7 +24,8 @@ import {
 import { VTMAUpload } from '@/components/vtma/vtma-upload';
 import { VTMAReportViewer } from '@/components/vtma/vtma-report-viewer';
 import { PatientSelector } from '@/components/vtma/vtma-patient-selector';
-import { DemoPatient } from '@/lib/demo-data';
+import { DemoPatient, getAllDemoPatients } from '@/lib/demo-data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function VTMAPage() {
   const router = useRouter();
@@ -97,16 +95,7 @@ export default function VTMAPage() {
             </div>
           </div>
           
-          {/* Patient Selector in Header */}
-          {activeView === 'workflow' && (
-            <div className="flex-1 max-w-md">
-              <PatientSelector
-                selectedPatient={selectedPatient}
-                onPatientSelect={handlePatientSelect}
-                onAddNew={handleAddNewPatient}
-              />
-            </div>
-          )}
+
         </div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" className="bg-blue-50 border-blue-200 text-blue-700">
@@ -191,13 +180,24 @@ export default function VTMAPage() {
         <main className="flex-1 overflow-auto">
           {activeView === 'workflow' && (
             <div className="p-6 max-w-7xl mx-auto">
-              <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                  Thermografie Workflow
-                </h1>
-                <p className="text-gray-600">
-                  Complete workflow voor thermografisch onderzoek - van upload tot rapport
-                </p>
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h1 className="text-2xl font-semibold text-gray-900 mb-1">
+                      Thermografie Workflow
+                    </h1>
+                    <p className="text-gray-600">
+                      Complete workflow voor rapportage
+                    </p>
+                  </div>
+                  <div className="flex-1 max-w-2xl ml-8">
+                    <PatientSelector
+                      selectedPatient={selectedPatient}
+                      onPatientSelect={handlePatientSelect}
+                      onAddNew={handleAddNewPatient}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -271,19 +271,161 @@ export default function VTMAPage() {
                   Nieuwe Patiënt
                 </Button>
               </div>
-              <Card>
+              
+              {/* Demo Data Notice */}
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                    DEMO MODUS
+                  </Badge>
+                  <span className="text-sm text-amber-700">
+                    Hieronder worden voorbeeldpatiënten getoond voor demonstratiedoeleinden
+                  </span>
+                </div>
+              </div>
+
+              {/* Patient Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getAllDemoPatients().map((patient) => {
+                  const getPatientInitials = (name: string): string => {
+                    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+                  };
+                  
+                  const getSpeciesEmoji = (species: string): string => {
+                    switch (species) {
+                      case 'paard': return '🐴';
+                      case 'hond': return '🐕';
+                      case 'kat': return '🐱';
+                      case 'rund': return '🐄';
+                      default: return '🐾';
+                    }
+                  };
+                  
+                  const getGenderBadgeColor = (gender: string): string => {
+                    switch (gender) {
+                      case 'reu':
+                      case 'hengst': return 'bg-blue-100 text-blue-800';
+                      case 'teef':
+                      case 'merrie': return 'bg-pink-100 text-pink-800';
+                      case 'gecastreerd':
+                      case 'ruin': return 'bg-gray-100 text-gray-800';
+                      default: return 'bg-gray-100 text-gray-800';
+                    }
+                  };
+                  
+                  return (
+                    <Card key={patient.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                      <CardContent className="p-4">
+                        {/* Patient Header */}
+                        <div className="flex items-center space-x-3 mb-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={patient.thumbnail} />
+                            <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm">
+                              {getPatientInitials(patient.patientName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-semibold text-gray-900">
+                                {patient.patientName}
+                              </h3>
+                              <span className="text-lg">{getSpeciesEmoji(patient.species)}</span>
+                              <Badge className="bg-orange-100 text-orange-800 text-xs">
+                                DEMO
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-500">
+                              {patient.patientNumber} • {patient.breed}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Patient Details */}
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-500">Geslacht:</span>
+                            <Badge variant="outline" className={getGenderBadgeColor(patient.gender)}>
+                              {patient.gender}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-500">Leeftijd:</span>
+                            <span className="text-gray-900">{patient.age}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-500">Eigenaar:</span>
+                            <span className="text-gray-900 truncate">{patient.ownerName}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-500">Laatste update:</span>
+                            <span className="text-gray-900">
+                              {new Date(patient.lastUpdated).toLocaleDateString('nl-NL')}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Active Issues */}
+                        {(patient.tailSwishing || patient.behaviorResistance || patient.performanceDrop) && (
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <p className="text-xs text-gray-500 mb-2">Actieve symptomen:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {patient.tailSwishing && (
+                                <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                                  Staartzwiepen
+                                </Badge>
+                              )}
+                              {patient.behaviorResistance && (
+                                <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                                  Verzet
+                                </Badge>
+                              )}
+                              {patient.performanceDrop && (
+                                <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                  Prestatieverval
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Actions */}
+                        <div className="mt-4 pt-3 border-t border-gray-100">
+                          <div className="flex space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => {
+                                setSelectedPatient(patient);
+                                setActiveView('workflow');
+                              }}
+                            >
+                              Selecteren
+                            </Button>
+                            <Button size="sm" variant="ghost" className="px-3">
+                              <FileText className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {/* Add New Patient Card */}
+              <Card className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer" onClick={handleAddNewPatient}>
                 <CardContent className="p-6">
-                  <div className="text-center py-12">
-                    <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Geen patiënten gevonden
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Plus className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                      Nieuwe Patiënt Toevoegen
                     </h3>
-                    <p className="text-gray-500 mb-4">
-                      Start met het toevoegen van een nieuwe patiënt via de workflow
+                    <p className="text-sm text-gray-500">
+                      Voeg een nieuwe patiënt toe aan het systeem
                     </p>
-                    <Button onClick={() => setActiveView('workflow')}>
-                      Naar Workflow
-                    </Button>
                   </div>
                 </CardContent>
               </Card>

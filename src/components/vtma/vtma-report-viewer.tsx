@@ -143,7 +143,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
         allowTaint: true
       });
       
-      const imgData = canvas.getDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       
       const imgWidth = 210; // A4 width in mm

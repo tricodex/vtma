@@ -23,7 +23,7 @@ import {
   ChevronRight,
   Filter
 } from 'lucide-react';
-import { DemoPatient, getAllDemoPatients, searchDemoPatients } from '@/lib/demo-data';
+import { DemoPatient, searchDemoPatients } from '@/lib/demo-data';
 
 interface PatientSelectorProps {
   selectedPatient?: DemoPatient | null;
@@ -87,29 +87,32 @@ export function PatientSelector({
     <div className={`relative ${className}`}>
       {/* Current Selection Display */}
       <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setIsOpen(!isOpen)}>
-        <CardContent className="p-4">
+        <CardContent className="px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4 flex-1">
               {selectedPatient ? (
                 <>
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-10 w-10 relative">
                     <AvatarImage src={selectedPatient.thumbnail} />
-                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm">
                       {getPatientInitials(selectedPatient.patientName)}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <div className="flex items-center space-x-2">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
                       <span className="font-semibold text-gray-900">
                         {selectedPatient.patientName}
                       </span>
                       <span className="text-lg">{getSpeciesEmoji(selectedPatient.species)}</span>
-                      <Badge variant="outline" className={getGenderBadgeColor(selectedPatient.gender)}>
+                      <Badge variant="outline" className={`${getGenderBadgeColor(selectedPatient.gender)} text-xs py-0 px-2`}>
                         {selectedPatient.gender}
                       </Badge>
+                      <span className="text-sm text-gray-500">
+                        {selectedPatient.patientNumber} • {selectedPatient.breed} • {formatAge(selectedPatient.age)}
+                      </span>
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {selectedPatient.patientNumber} • {selectedPatient.breed} • {formatAge(selectedPatient.age)}
+                    <div className="text-xs text-gray-400">
+                      {selectedPatient.ownerName} • {selectedPatient.clinicName}
                     </div>
                   </div>
                 </>
@@ -118,7 +121,7 @@ export function PatientSelector({
                   <div className="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <span className="font-medium text-gray-600">Selecteer Patiënt</span>
                     <div className="text-sm text-gray-400">Kies bestaande patiënt of voeg nieuwe toe</div>
                   </div>
@@ -132,25 +135,25 @@ export function PatientSelector({
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-2 shadow-lg border border-gray-200">
-          <CardContent className="p-4">
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg border border-gray-200">
+          <CardContent className="p-3">
             {/* Search and Filter Header */}
-            <div className="space-y-3 mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Zoek op naam, nummer, ras..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <div className="flex items-center justify-between">
+            <div className="space-y-2 mb-3">
+              <div className="flex items-center space-x-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Zoek op naam, nummer, ras..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
                 <div className="flex items-center space-x-2">
                   <Filter className="h-4 w-4 text-gray-400" />
                   <Select value={filterSpecies} onValueChange={setFilterSpecies}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-36">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -170,7 +173,7 @@ export function PatientSelector({
                     onAddNew();
                     setIsOpen(false);
                   }}
-                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100 whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Nieuwe Patiënt
@@ -179,7 +182,7 @@ export function PatientSelector({
             </div>
 
             {/* Patient List */}
-            <div className="max-h-80 overflow-y-auto space-y-2">
+            <div className="max-h-60 overflow-y-auto space-y-1">
               {filteredPatients.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <User className="h-8 w-8 mx-auto mb-2 text-gray-300" />
@@ -190,7 +193,7 @@ export function PatientSelector({
                 filteredPatients.map((patient) => (
                   <div
                     key={patient.id}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-blue-50 hover:border-blue-200 ${
+                    className={`p-2 rounded-lg border cursor-pointer transition-colors hover:bg-blue-50 hover:border-blue-200 ${
                       selectedPatient?.id === patient.id 
                         ? 'bg-blue-50 border-blue-300' 
                         : 'bg-white border-gray-200'
@@ -209,7 +212,7 @@ export function PatientSelector({
                       </Avatar>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex items-center space-x-2">
                           <h4 className="font-semibold text-gray-900 truncate">
                             {patient.patientName}
                           </h4>
@@ -219,34 +222,25 @@ export function PatientSelector({
                           </Badge>
                         </div>
                         
-                        <div className="text-sm text-gray-500 space-y-1">
-                          <div className="flex items-center space-x-4">
-                            <span className="flex items-center space-x-1">
-                              <span className="font-mono">{patient.patientNumber}</span>
-                            </span>
-                            <span>{patient.breed}</span>
-                            <span>{formatAge(patient.age)}</span>
-                          </div>
-                          
-                          <div className="flex items-center space-x-4 text-xs">
-                            <span className="flex items-center space-x-1">
-                              <User className="h-3 w-3" />
-                              <span>{patient.ownerName}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <Stethoscope className="h-3 w-3" />
-                              <span>{patient.clinicName}</span>
-                            </span>
-                          </div>
-                          
-                          {/* Active Issues Indicators */}
+                        <div className="flex items-center space-x-6 text-sm text-gray-500">
+                          <span className="font-mono">{patient.patientNumber}</span>
+                          <span>{patient.breed}</span>
+                          <span>{formatAge(patient.age)}</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-6 text-xs text-gray-500">
+                          <span className="flex items-center space-x-1">
+                            <User className="h-3 w-3" />
+                            <span>{patient.ownerName}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <Stethoscope className="h-3 w-3" />
+                            <span>{patient.clinicName}</span>
+                          </span>
                           {(patient.tailSwishing || patient.behaviorResistance || patient.performanceDrop) && (
-                            <div className="flex items-center space-x-1 mt-2">
+                            <div className="flex items-center space-x-1">
                               <Heart className="h-3 w-3 text-amber-500" />
-                              <span className="text-xs text-amber-600">Actieve klachten</span>
-                              {patient.tailSwishing && <Badge variant="outline" className="text-xs py-0 px-1">Staartzwiepen</Badge>}
-                              {patient.behaviorResistance && <Badge variant="outline" className="text-xs py-0 px-1">Verzet</Badge>}
-                              {patient.performanceDrop && <Badge variant="outline" className="text-xs py-0 px-1">Prestatieverval</Badge>}
+                              <span className="text-amber-600">Actieve klachten</span>
                             </div>
                           )}
                         </div>
