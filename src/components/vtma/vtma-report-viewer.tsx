@@ -10,6 +10,8 @@ import { Patient } from '@/lib/types';
 import { Id } from '@/../convex/_generated/dataModel';
 import { useMutation } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
+import ReactMarkdown from 'react-markdown';
+import jsPDF from 'jspdf';
 
 interface VTMAReportViewerProps {
   uploadedImages: string[];
@@ -80,6 +82,98 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
   // Convex mutations
   const createReport = useMutation(api.reports.create);
 
+  const downloadPDF = useCallback(async () => {
+    if (!aatReport) {
+      setError('Geen rapport beschikbaar voor PDF export');
+      return;
+    }
+
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      const maxWidth = pageWidth - 2 * margin;
+      let yPosition = margin;
+
+      // Helper function to add text with word wrapping
+      const addWrappedText = (text: string, fontSize: number = 12, isBold: boolean = false) => {
+        pdf.setFontSize(fontSize);
+        if (isBold) pdf.setFont('helvetica', 'bold');
+        else pdf.setFont('helvetica', 'normal');
+        
+        const lines = pdf.splitTextToSize(text, maxWidth);
+        
+        // Check if we need a new page
+        if (yPosition + (lines.length * fontSize * 0.3527) > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        
+        pdf.text(lines, margin, yPosition);
+        yPosition += lines.length * fontSize * 0.3527 + 5;
+      };
+
+      // Header
+      addWrappedText('VETERINAIRE THERMOGRAFISCH RAPPORT', 18, true);
+      yPosition += 10;
+
+      // Patient info
+      if (selectedPatient) {
+        addWrappedText(`Patiënt: ${selectedPatient.patientName}`, 14, true);
+        addWrappedText(`Diersoort: ${selectedPatient.species} | Ras: ${selectedPatient.breed}`);
+        addWrappedText(`Eigenaar: ${selectedPatient.ownerName}`);
+        yPosition += 10;
+      }
+
+      // Report sections
+      const sections = [
+        aatReport.patientIdentification,
+        aatReport.anamnesis,
+        aatReport.protocolConditions,
+        aatReport.thermographicFindings,
+        aatReport.interpretation,
+        aatReport.recommendations
+      ];
+
+      sections.forEach(section => {
+        addWrappedText(section.title, 14, true);
+        addWrappedText(section.content);
+        
+        if (section.findings.length > 0) {
+          addWrappedText('Bevindingen:', 12, true);
+          section.findings.forEach(finding => {
+            addWrappedText(`• ${finding}`);
+          });
+        }
+        yPosition += 10;
+      });
+
+      // Differential diagnoses
+      if (aatReport.differentialDiagnoses.length > 0) {
+        addWrappedText('Differentiaal Diagnoses:', 14, true);
+        aatReport.differentialDiagnoses.forEach(diagnosis => {
+          addWrappedText(`• ${diagnosis}`);
+        });
+        yPosition += 10;
+      }
+
+      // Footer
+      yPosition += 10;
+      addWrappedText(`Urgentieniveau: ${aatReport.urgencyLevel}`, 12, true);
+      addWrappedText(`Betrouwbaarheid: ${aatReport.confidence}%`);
+      addWrappedText(`Gegenereerd: ${new Date().toLocaleDateString('nl-NL')}`);
+
+      // Save PDF
+      const fileName = `VTMA_Rapport_${selectedPatient?.patientName || 'Patient'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      setError('Fout bij het genereren van PDF rapport');
+    }
+  }, [aatReport, selectedPatient]);
+
   const handleAnalyze = useCallback(async () => {
     if (uploadedImages.length === 0) {
       setError('Geen afbeeldingen geüpload om te analyseren');
@@ -145,7 +239,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
               differentialDiagnoses: result.differentialDiagnoses,
               urgencyLevel: result.urgencyLevel,
               confidence: result.confidence,
-              images: uploadedImages,
+              images: [], // Don't store large base64 images, just reference count
               status: 'completed'
             });
             
@@ -180,11 +274,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
     }
   };
 
-  const formatFindings = (findings: string[]) => {
-    return findings.map((finding, index) => (
-      <li key={index} className="text-sm text-gray-700">{finding}</li>
-    ));
-  };
+
 
   return (
     <div className="space-y-4">
@@ -217,12 +307,12 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              AI Analyseert...
+              Analyseert...
             </>
           ) : (
             <>
               <Brain className="w-4 h-4 mr-2" />
-              Start AI Thermografische Analyse
+              Start Thermografische Analyse
             </>
           )}
         </Button>
@@ -252,10 +342,15 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <Activity className="w-5 h-5 mr-2 text-purple-600" />
-              AI Analyse Resultaten
+              Analyse Resultaten
             </h3>
             <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={downloadPDF}
+                disabled={!aatReport}
+              >
                 <Download className="w-4 h-4 mr-2" />
                 PDF Export
               </Button>
@@ -292,9 +387,11 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
                   {region.findings.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Bevindingen:</h4>
-                      <ul className="space-y-1 list-disc list-inside">
-                        {formatFindings(region.findings)}
-                      </ul>
+                      <div className="prose prose-sm max-w-none">
+                        <ReactMarkdown>
+                          {region.findings.map(finding => `- ${finding}`).join('\n')}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -311,7 +408,9 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700 leading-relaxed">{analysis.summary}</p>
+              <div className="text-gray-700 leading-relaxed prose prose-sm max-w-none">
+                <ReactMarkdown>{analysis.summary}</ReactMarkdown>
+              </div>
             </CardContent>
           </Card>
 

@@ -214,7 +214,7 @@ export default function VTMAPage() {
                       <span>1. Upload Thermografische Beelden</span>
                     </CardTitle>
                     <CardDescription>
-                      Upload thermografische beelden voor AI-analyse
+                      Upload thermografische beelden voor analyse
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -241,7 +241,7 @@ export default function VTMAPage() {
                       Geautomatiseerde rapportgeneratie gebaseerd op thermografische analyse
                       {selectedPatient && (
                         <span className="block text-xs mt-1 text-blue-600">
-                          Gebruikt patiëntgegevens van {selectedPatient.patientName} voor betere AI-analyse
+                          Gebruikt patiëntgegevens van {selectedPatient.patientName} voor betere analyse
                         </span>
                       )}
                     </CardDescription>

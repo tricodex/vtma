@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,14 +41,14 @@ export function PatientSelector({
   className = "" 
 }: PatientSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [filterSpecies, setFilterSpecies] = useState<string>('all');
 
   // Fetch all patients from Convex
   const allPatients = useQuery(api.patients.getAll) || [];
 
-  useEffect(() => {
+  // Memoized filtered patients to prevent infinite loops
+  const filteredPatients = useMemo(() => {
     let patients = allPatients;
     
     // Filter by search query
@@ -67,8 +67,8 @@ export function PatientSelector({
       patients = patients.filter((patient: Patient) => patient.species === filterSpecies);
     }
     
-    setFilteredPatients(patients);
-  }, [searchQuery, filterSpecies, allPatients]);
+    return patients;
+  }, [allPatients, searchQuery, filterSpecies]);
 
   const getPatientInitials = (name: string): string => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();

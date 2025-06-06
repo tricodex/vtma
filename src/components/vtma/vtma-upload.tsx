@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Upload, 
   FileImage, 
   X, 
   CheckCircle, 
@@ -137,6 +136,7 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getThermalQuality = (fileName: string) => {
     // Mock thermal quality assessment
     const qualities = ['Uitstekend', 'Goed', 'Matig'];

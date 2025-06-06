@@ -11,6 +11,8 @@ import {
   CheckCircle,
   Thermometer,
   File,
+  Heart,
+  Eye,
   Camera,
   Zap
 } from 'lucide-react';
@@ -23,76 +25,16 @@ interface DashboardStats {
   weeklyTrend: number;
 }
 
-interface RecentActivity {
-  id: string;
-  type: 'upload' | 'report' | 'analysis';
-  patient: string;
-  timestamp: Date;
-  status: 'completed' | 'processing' | 'pending';
-}
+
 
 export function VTMADashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats] = useState<DashboardStats>({
     totalPatients: 0,
     reportsGenerated: 0,
     avgProcessingTime: 0,
     aiAccuracy: 0,
     weeklyTrend: 0
   });
-
-  const [recentActivity] = useState<RecentActivity[]>([]);
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'upload': return <Camera className="w-4 h-4" />;
-      case 'report': return <FileText className="w-4 h-4" />;
-      case 'analysis': return <File className="w-4 h-4" />;
-      default: return <Activity className="w-4 h-4" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Voltooid
-          </Badge>
-        );
-      case 'processing':
-        return (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            <Zap className="w-3 h-3 mr-1" />
-            Verwerking
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-            <Clock className="w-3 h-3 mr-1" />
-            Wachtend
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const formatTimeAgo = (timestamp: Date) => {
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - timestamp.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes} min geleden`;
-    } else if (diffInMinutes < 1440) {
-      const hours = Math.floor(diffInMinutes / 60);
-      return `${hours} uur geleden`;
-    } else {
-      const days = Math.floor(diffInMinutes / 1440);
-      return `${days} dag${days > 1 ? 'en' : ''} geleden`;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -187,7 +129,7 @@ export function VTMADashboard() {
               <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                 <Camera className="w-6 h-6 text-blue-600 mb-2" />
                 <p className="text-xs font-medium text-blue-900">Upload Beelden</p>
-                <p className="text-xs text-blue-700">Thermografische foto's</p>
+                <p className="text-xs text-blue-700">Thermografische foto&apos;s</p>
               </div>
               
               <div className="bg-green-50 p-3 rounded-lg border border-green-200">

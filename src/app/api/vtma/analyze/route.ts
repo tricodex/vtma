@@ -270,7 +270,10 @@ function parseGeminiResponse(aiResponse: string, patientData?: PatientData): AIA
 function extractThermographicFindings(response: string): string {
   // Look for thermographic findings in the AI response
   const findings = response.match(/thermografische?([\s\S]*?)(?=interpretatie|aanbevel|differentiaal|$)/i);
-  return findings?.[1]?.trim() || 'Thermografische analyse uitgevoerd. Gedetailleerde bevindingen vereisen veterinaire interpretatie.';
+  const result = findings?.[1]?.trim() || 'Thermografische analyse uitgevoerd. Gedetailleerde bevindingen vereisen veterinaire interpretatie.';
+  
+  // Format as markdown for better display
+  return result.replace(/\n/g, '\n\n').replace(/[•\-\*]\s*/g, '- ');
 }
 
 function extractSpecificFindings(response: string): string[] {
@@ -286,12 +289,15 @@ function extractSpecificFindings(response: string): string[] {
 
 function extractInterpretation(response: string): string {
   const interpretation = response.match(/interpretatie([\s\S]*?)(?=aanbevel|differentiaal|$)/i);
-  return interpretation?.[1]?.trim() || 'De thermografische bevindingen vereisen correlatie met klinisch onderzoek voor definitieve interpretatie.';
+  const result = interpretation?.[1]?.trim() || 'De thermografische bevindingen vereisen correlatie met klinisch onderzoek voor definitieve interpretatie.';
+  
+  // Format as markdown for better display
+  return result.replace(/\n/g, '\n\n').replace(/[•\-\*]\s*/g, '- ');
 }
 
 function extractInterpretationFindings(): string[] {
   return [
-    'AI-gebaseerde patroonherkenning toegepast',
+    'Geautomatiseerde patroonherkenning toegepast',
     'Anatomische correlatie uitgevoerd',
     'Pathofysiologische evaluatie voltooid'
   ];
@@ -299,7 +305,10 @@ function extractInterpretationFindings(): string[] {
 
 function extractRecommendations(response: string): string {
   const recommendations = response.match(/aanbevel(?:ing)?[en]?([\s\S]*?)(?=urgentie|follow|$)/i);
-  return recommendations?.[1]?.trim() || 'Veterinaire evaluatie aanbevolen voor definitieve diagnose en behandelingsplan.';
+  const result = recommendations?.[1]?.trim() || 'Veterinaire evaluatie aanbevolen voor definitieve diagnose en behandelingsplan.';
+  
+  // Format as markdown for better display
+  return result.replace(/\n/g, '\n\n').replace(/[•\-\*]\s*/g, '- ');
 }
 
 function extractRecommendationFindings(): string[] {
@@ -390,9 +399,9 @@ function generateFallbackAnalysis(patientData?: PatientData): AIAnalysisResult {
     },
     interpretation: {
       title: 'Interpretatie',
-      content: 'AI-analyse uitgevoerd. Veterinaire expertise vereist voor definitieve interpretatie van thermografische patronen.',
+      content: 'Geautomatiseerde analyse uitgevoerd. Veterinaire expertise vereist voor definitieve interpretatie van thermografische patronen.',
       confidence: 65,
-      findings: ['AI-preprocessing voltooid', 'Expert review aanbevolen']
+      findings: ['Automatische preprocessing voltooid', 'Expert review aanbevolen']
     },
     recommendations: {
       title: 'Aanbevelingen',

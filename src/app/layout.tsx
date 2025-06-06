@@ -48,6 +48,7 @@ export default function RootLayout({
           medicalMono.variable,
           robotoSans.variable
         )}
+        suppressHydrationWarning
       >
         <ConvexClientProvider>
           <div vaul-drawer-wrapper="" className="bg-background">
