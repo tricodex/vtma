@@ -184,7 +184,13 @@ PATIËNT INFORMATIE:
       }
     });
 
-    const aiAnalysis = response.text;
+    // Safely extract text from response
+    const aiAnalysis = response?.text || response?.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!aiAnalysis) {
+      console.warn('No text response from Gemini API, using fallback analysis');
+      return generateFallbackAnalysis(patientData);
+    }
     
     // Parse AI response into structured format
     const structuredResult = parseGeminiResponse(aiAnalysis, patientData);
@@ -252,7 +258,7 @@ function parseGeminiResponse(aiResponse: string, patientData?: any): AIAnalysisR
 
 function extractThermographicFindings(response: string): string {
   // Look for thermographic findings in the AI response
-  const findings = response.match(/thermografische?(.*?)(?=interpretatie|aanbevel|differentiaal|$)/is);
+  const findings = response.match(/thermografische?([\s\S]*?)(?=interpretatie|aanbevel|differentiaal|$)/i);
   return findings?.[1]?.trim() || 'Thermografische analyse uitgevoerd. Gedetailleerde bevindingen vereisen veterinaire interpretatie.';
 }
 
@@ -268,7 +274,7 @@ function extractSpecificFindings(response: string): string[] {
 }
 
 function extractInterpretation(response: string): string {
-  const interpretation = response.match(/interpretatie(.*?)(?=aanbevel|differentiaal|$)/is);
+  const interpretation = response.match(/interpretatie([\s\S]*?)(?=aanbevel|differentiaal|$)/i);
   return interpretation?.[1]?.trim() || 'De thermografische bevindingen vereisen correlatie met klinisch onderzoek voor definitieve interpretatie.';
 }
 
@@ -281,7 +287,7 @@ function extractInterpretationFindings(response: string): string[] {
 }
 
 function extractRecommendations(response: string): string {
-  const recommendations = response.match(/aanbevel(?:ing)?[en]?(.*?)(?=urgentie|follow|$)/is);
+  const recommendations = response.match(/aanbevel(?:ing)?[en]?([\s\S]*?)(?=urgentie|follow|$)/i);
   return recommendations?.[1]?.trim() || 'Veterinaire evaluatie aanbevolen voor definitieve diagnose en behandelingsplan.';
 }
 
@@ -294,7 +300,7 @@ function extractRecommendationFindings(response: string): string[] {
 }
 
 function extractDifferentialDiagnoses(response: string): string[] {
-  const ddxRegex = /differentiaal.*?diagnos[ei]s?(.*?)(?=aanbevel|urgentie|$)/is;
+  const ddxRegex = /differentiaal.*?diagnos[ei]s?([\s\S]*?)(?=aanbevel|urgentie|$)/i;
   const ddxSection = response.match(ddxRegex);
   
   if (ddxSection) {
