@@ -28,6 +28,7 @@ interface UploadedFile {
   name: string;
   size: number;
   url: string;
+  base64: string; // Added for Gemini API compatibility
   type: string;
   status: 'uploading' | 'completed' | 'error';
   progress: number;
@@ -42,21 +43,38 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newFiles: UploadedFile[] = acceptedFiles.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      name: file.name,
-      size: file.size,
-      url: URL.createObjectURL(file),
-      type: file.type,
-      status: 'uploading' as const,
-      progress: 0,
-      metadata: {
-        temperature: '20°C',
-        emissivity: '0.98',
-        distance: '1.5m'
-      }
-    }));
+  // Helper function to convert File to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    // Process files with base64 conversion
+    const newFiles: UploadedFile[] = await Promise.all(
+      acceptedFiles.map(async file => {
+        const base64 = await fileToBase64(file);
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          size: file.size,
+          url: URL.createObjectURL(file),
+          base64: base64,
+          type: file.type,
+          status: 'uploading' as const,
+          progress: 0,
+          metadata: {
+            temperature: '20°C',
+            emissivity: '0.98',
+            distance: '1.5m'
+          }
+        };
+      })
+    );
 
     setFiles(prev => [...prev, ...newFiles]);
 
@@ -77,9 +95,9 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
       }, 200);
     });
 
-    // Update parent component
-    const urls = newFiles.map(f => f.url);
-    onImagesUploaded([...uploadedImages, ...urls]);
+    // Update parent component with base64 data for API compatibility
+    const base64Images = newFiles.map(f => f.base64);
+    onImagesUploaded([...uploadedImages, ...base64Images]);
   }, [uploadedImages, onImagesUploaded]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
