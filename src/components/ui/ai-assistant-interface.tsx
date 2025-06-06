@@ -13,7 +13,6 @@ import {
   BookOpen,
   PenTool,
   BrainCircuit,
-  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 

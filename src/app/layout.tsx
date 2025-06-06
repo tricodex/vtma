@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Roboto } from "next/font/google";
 import "./globals.css";
+import { cn } from '@/lib/utils'
+import { Toaster } from '@/components/ui/sonner'
+import { ConvexClientProvider } from "./ConvexClientProvider";
 
 // Professional medical fonts based on industry research
 const medicalSans = Inter({
@@ -37,11 +40,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="nl" suppressHydrationWarning>
       <body
-        className={`${medicalSans.variable} ${medicalMono.variable} ${robotoSans.variable} antialiased font-sans`}
+        className={cn(
+          'min-h-screen bg-background font-sans antialiased',
+          medicalSans.variable,
+          medicalMono.variable,
+          robotoSans.variable
+        )}
       >
-        {children}
+        <ConvexClientProvider>
+          <div vaul-drawer-wrapper="" className="bg-background">
+            {children}
+          </div>
+          <Toaster />
+        </ConvexClientProvider>
       </body>
     </html>
   );

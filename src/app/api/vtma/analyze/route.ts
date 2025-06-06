@@ -136,9 +136,20 @@ export async function POST(request: NextRequest) {
   }
 }
 
+interface PatientData {
+  name?: string;
+  species?: string;
+  breed?: string;
+  age?: string;
+  weight?: string;
+  symptoms?: string[];
+  primaryComplaint?: string;
+  duration?: string;
+}
+
 async function analyzeThermographicImages(
   images: string[], 
-  patientData?: any
+  patientData?: PatientData
 ): Promise<AIAnalysisResult> {
   
   // Prepare patient context
@@ -205,7 +216,7 @@ PATIËNT INFORMATIE:
   }
 }
 
-function parseGeminiResponse(aiResponse: string, patientData?: any): AIAnalysisResult {
+function parseGeminiResponse(aiResponse: string, patientData?: PatientData): AIAnalysisResult {
   // This is a simplified parser - in production, you'd want more robust parsing
   // For now, we'll create a structured response based on the AI output
   
@@ -242,13 +253,13 @@ function parseGeminiResponse(aiResponse: string, patientData?: any): AIAnalysisR
       title: 'Interpretatie',
       content: extractInterpretation(aiResponse),
       confidence: calculateConfidence(aiResponse) - 5,
-      findings: extractInterpretationFindings(aiResponse)
+      findings: extractInterpretationFindings()
     },
     recommendations: {
       title: 'Aanbevelingen',
       content: extractRecommendations(aiResponse),
       confidence: 90,
-      findings: extractRecommendationFindings(aiResponse)
+      findings: extractRecommendationFindings()
     },
     differentialDiagnoses: extractDifferentialDiagnoses(aiResponse),
     urgencyLevel: determineUrgencyLevel(aiResponse),
@@ -278,7 +289,7 @@ function extractInterpretation(response: string): string {
   return interpretation?.[1]?.trim() || 'De thermografische bevindingen vereisen correlatie met klinisch onderzoek voor definitieve interpretatie.';
 }
 
-function extractInterpretationFindings(response: string): string[] {
+function extractInterpretationFindings(): string[] {
   return [
     'AI-gebaseerde patroonherkenning toegepast',
     'Anatomische correlatie uitgevoerd',
@@ -291,7 +302,7 @@ function extractRecommendations(response: string): string {
   return recommendations?.[1]?.trim() || 'Veterinaire evaluatie aanbevolen voor definitieve diagnose en behandelingsplan.';
 }
 
-function extractRecommendationFindings(response: string): string[] {
+function extractRecommendationFindings(): string[] {
   return [
     'Veterinaire consultatie aanbevolen',
     'Aanvullend onderzoek overwegen',
@@ -344,7 +355,7 @@ function calculateConfidence(response: string): number {
   return Math.min(confidence, 95); // Cap at 95% for AI analysis
 }
 
-function generateFallbackAnalysis(patientData?: any): AIAnalysisResult {
+function generateFallbackAnalysis(patientData?: PatientData): AIAnalysisResult {
   // Fallback analysis when Gemini API fails
   const timestamp = new Date().toLocaleDateString('nl-NL');
   

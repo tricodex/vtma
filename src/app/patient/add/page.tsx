@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
-  Save, 
   User, 
   Stethoscope,
   AlertTriangle
@@ -16,7 +14,6 @@ import { VTMAPatientForm } from '@/components/vtma/vtma-patient-form';
 
 export default function AddPatientPage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">

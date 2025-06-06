@@ -1,547 +1,360 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertCircle, Clock, Activity, Eye, Download, FileText, ArrowRight, Brain, CheckCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { 
-  Brain, 
-  FileText, 
-  Download, 
-  Eye, 
-  Thermometer, 
-  Zap, 
-  CheckCircle, 
-  AlertTriangle,
-  Stethoscope,
-  Activity,
-  TrendingUp,
-  Target,
-  Clock
-} from 'lucide-react';
-import { DemoPatient } from '@/lib/demo-data';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { Patient } from '@/lib/types';
+import { Id } from '@/../convex/_generated/dataModel';
+import { useMutation } from 'convex/react';
+import { api } from '@/../convex/_generated/api';
 
 interface VTMAReportViewerProps {
   uploadedImages: string[];
-  selectedPatient?: DemoPatient | null;
+  selectedPatient?: Patient | null;
 }
 
-interface ReportSection {
-  title: string;
-  content: string;
-  confidence: number;
-  findings: string[];
+interface AnalysisResult {
+  regions: Array<{
+    region: string;
+    temperature: string;
+    status: string;
+    findings: string[];
+  }>;
+  summary: string;
+  recommendations: string[];
 }
 
-interface AIAnalysisResult {
-  patientIdentification: ReportSection;
-  anamnesis: ReportSection;
-  protocolConditions: ReportSection;
-  thermographicFindings: ReportSection;
-  interpretation: ReportSection;
-  recommendations: ReportSection;
+// AAT Report structure that matches the API response
+interface AAT_AnalysisResult {
+  patientIdentification: {
+    title: string;
+    content: string;
+    confidence: number;
+    findings: string[];
+  };
+  anamnesis: {
+    title: string;
+    content: string;
+    confidence: number;
+    findings: string[];
+  };
+  protocolConditions: {
+    title: string;
+    content: string;
+    confidence: number;
+    findings: string[];
+  };
+  thermographicFindings: {
+    title: string;
+    content: string;
+    confidence: number;
+    findings: string[];
+  };
+  interpretation: {
+    title: string;
+    content: string;
+    confidence: number;
+    findings: string[];
+  };
+  recommendations: {
+    title: string;
+    content: string;
+    confidence: number;
+    findings: string[];
+  };
   differentialDiagnoses: string[];
   urgencyLevel: 'routine' | 'urgent' | 'immediate';
   confidence: number;
 }
 
 export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReportViewerProps) {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
-  const [analysisStage, setAnalysisStage] = useState('');
-  const [report, setReport] = useState<AIAnalysisResult | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [aatReport, setAATReport] = useState<AAT_AnalysisResult | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const reportRef = useRef<HTMLDivElement>(null);
+  const [saved, setSaved] = useState(false);
 
-  const generateReport = async () => {
+  // Convex mutations
+  const createReport = useMutation(api.reports.create);
+
+  const handleAnalyze = useCallback(async () => {
     if (uploadedImages.length === 0) {
-      setError('Upload eerst thermografische beelden om een rapport te genereren.');
+      setError('Geen afbeeldingen geüpload om te analyseren');
       return;
     }
 
-    setIsAnalyzing(true);
+    setLoading(true);
     setError(null);
-    setAnalysisProgress(0);
+    setSaved(false);
 
     try {
-      // Simulate AI analysis stages
-      const stages = [
-        'Beelden voorverwerken...',
-        'Temperatuurpatronen analyseren...',
-        'Asymmetrieën detecteren...',
-        'Pathologische patronen identificeren...',
-        'Differentiaal diagnoses genereren...',
-        'Rapport samenstellen...'
-      ];
-
-      for (let i = 0; i < stages.length; i++) {
-        setAnalysisStage(stages[i]);
-        setAnalysisProgress((i + 1) * (100 / stages.length));
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
-
-      // Generate AI report using Gemini
       const response = await fetch('/api/vtma/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: JSON.stringify({ 
           images: uploadedImages,
-          patientData: selectedPatient ? {
-            name: selectedPatient.patientName,
-            species: selectedPatient.species,
-            breed: selectedPatient.breed,
-            age: selectedPatient.age,
-            weight: selectedPatient.weight,
-            symptoms: [
-              ...(selectedPatient.tailSwishing ? ['staartzwiepen'] : []),
-              ...(selectedPatient.behaviorResistance ? ['verzet_gedrag'] : []),
-              ...(selectedPatient.sensitiveBrushing ? ['gevoelig_borstelen'] : []),
-              ...(selectedPatient.reluctantBending ? ['moeilijk_buigen'] : []),
-              ...(selectedPatient.performanceDrop ? ['prestatieverval'] : []),
-              ...(selectedPatient.gaitIrregularity ? ['onregelmatige_gang'] : [])
-            ],
-            primaryComplaint: selectedPatient.primaryComplaint,
-            duration: selectedPatient.symptomDuration
-          } : {
-            species: 'paard',
-            symptoms: ['onbekend'],
-            primaryComplaint: 'Algemene thermografische screening'
-          }
+          patient: selectedPatient
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Analyse gefaald');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const analysisResult = await response.json();
-      setReport(analysisResult);
+      const result = await response.json();
       
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Onbekende fout opgetreden');
-      console.error('Analysis error:', err);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const downloadPDF = async () => {
-    if (!report || !reportRef.current) return;
-    
-    try {
-      // Generate PDF from the report content
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true
-      });
-      
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      
-      let position = 0;
-      
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      // Add additional pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+      // Check if we have error in response
+      if (result.error) {
+        throw new Error(result.error);
       }
       
-      const fileName = `VTMA_Rapport_${selectedPatient?.patientName || 'Patient'}_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
-      
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-      // Fallback to text download
-      downloadReport();
-    }
-  };
-
-  const downloadReport = () => {
-    if (!report) return;
-    
-    // Generate text report as fallback
-    const reportText = generateReportText(report);
-    const blob = new Blob([reportText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `VTMA_Rapport_${selectedPatient?.patientName || 'Patient'}_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const generateReportText = (report: AIAnalysisResult): string => {
-    return `
-VETERINAIRE THERMOGRAFIE RAPPORT
-================================
-
-Datum: ${new Date().toLocaleDateString('nl-NL')}
-Gegenereerd door: VTMA AI Systeem
-Betrouwbaarheid: ${report.confidence}%
-${selectedPatient ? `
-PATIËNT INFORMATIE
-------------------
-Naam: ${selectedPatient.patientName}
-Diersoort: ${selectedPatient.species}
-Ras: ${selectedPatient.breed}
-Leeftijd: ${selectedPatient.age}
-Gewicht: ${selectedPatient.weight}
-Eigenaar: ${selectedPatient.ownerName}
-ID: ${selectedPatient.patientId}
-` : ''}
-
-PATIËNT IDENTIFICATIE
---------------------
-${report.patientIdentification.content}
-
-ANAMNESE EN HOOFDKLACHT
-----------------------
-${report.anamnesis.content}
-
-ONDERZOEKSPROTOCOL EN OMSTANDIGHEDEN
-------------------------------------
-${report.protocolConditions.content}
-
-THERMOGRAFISCHE BEVINDINGEN
----------------------------
-${report.thermographicFindings.content}
-
-Belangrijke bevindingen:
-${report.thermographicFindings.findings.map(f => `• ${f}`).join('\n')}
-
-INTERPRETATIE EN DIFFERENTIAAL DIAGNOSE
----------------------------------------
-${report.interpretation.content}
-
-Differentiaal diagnoses:
-${report.differentialDiagnoses.map(d => `• ${d}`).join('\n')}
-
-AANBEVELINGEN
-------------
-${report.recommendations.content}
-
-Urgentie: ${report.urgencyLevel === 'immediate' ? 'Onmiddellijk' : 
-           report.urgencyLevel === 'urgent' ? 'Spoedig' : 'Routine'}
-
----
-Dit rapport is gegenereerd door AI en dient als ondersteuning voor veterinaire diagnose.
-Definitieve diagnose vereist altijd veterinaire beoordeling.
-    `.trim();
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Analysis Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {/* <Brain className="w-5 h-5" /> */}
-              <span>Analyse</span>
-            </div>
-            <Badge 
-              variant={report ? "default" : "secondary"}
-              className={report ? "bg-green-100 text-green-800" : ""}
-            >
-              {report ? 'Rapport Beschikbaar' : 'Nog Geen Analyse'}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!isAnalyzing && !report && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Klaar voor Analyse
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Start de analyse om automatisch een gestandaardiseerd thermografie rapport te genereren volgens AAT richtlijnen.
-              </p>
-              <Button
-                onClick={generateReport}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              >
-                {/* <Brain className="w-4 h-4 mr-2" /> */}
-                Start Analyse
-              </Button>
-            </div>
-          )}
-
-          {isAnalyzing && (
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <Brain className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Analyse Thermografische Beelden
-                </h3>
-                <p className="text-gray-600 mb-4">{analysisStage}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Analyse Voortgang</span>
-                  <span>{Math.round(analysisProgress)}%</span>
-                </div>
-                <Progress value={analysisProgress} className="h-2" />
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Generated Report */}
-      {report && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FileText className="w-5 h-5" />
-                <span>Gestandaardiseerd Thermografie Rapport</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline" className="flex items-center space-x-1">
-                  <CheckCircle className="w-3 h-3" />
-                  <span>{report.confidence}% Betrouwbaar</span>
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={downloadPDF}
-                  disabled={!report}
-                  className="mr-2"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  PDF Download
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={downloadReport}
-                  disabled={!report}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Tekst
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {selectedPatient && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-900">
-                      Geselecteerde Patiënt: {selectedPatient.patientName}
-                    </p>
-                    <p className="text-xs text-blue-600">
-                      {selectedPatient.species} • {selectedPatient.breed} • {selectedPatient.age}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                    ID: {selectedPatient.patientId}
-                  </Badge>
-                </div>
-              </div>
-            )}
+      // The API returns AAT_AnalysisResult directly
+      if (result.patientIdentification && result.thermographicFindings) {
+        setAATReport(result as AAT_AnalysisResult);
+        
+        // Create simplified analysis for UI display from thermographic findings
+        const simplifiedAnalysis: AnalysisResult = {
+          regions: [{
+            region: 'Thermografische Gebieden',
+            temperature: 'Variabel',
+            status: result.urgencyLevel === 'immediate' ? 'afwijkend' : 
+                    result.urgencyLevel === 'urgent' ? 'verhoogd' : 'normaal',
+            findings: result.thermographicFindings.findings || []
+          }],
+          summary: result.thermographicFindings.content || 'Analyse voltooid',
+          recommendations: result.recommendations.findings || []
+        };
+        setAnalysis(simplifiedAnalysis);
+        
+        // Save report to Convex if patient is selected
+        if (selectedPatient && selectedPatient._id) {
+          try {
+            const reportId = await createReport({
+              patientId: selectedPatient._id as Id<'patients'>,
+              patientIdentification: result.patientIdentification,
+              anamnesis: result.anamnesis,
+              protocolConditions: result.protocolConditions,
+              thermographicFindings: result.thermographicFindings,
+              interpretation: result.interpretation,
+              recommendations: result.recommendations,
+              differentialDiagnoses: result.differentialDiagnoses,
+              urgencyLevel: result.urgencyLevel,
+              confidence: result.confidence,
+              images: uploadedImages,
+              status: 'completed'
+            });
             
-            <Tabs defaultValue="findings" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="findings">Bevindingen</TabsTrigger>
-                <TabsTrigger value="interpretation">Interpretatie</TabsTrigger>
-                <TabsTrigger value="recommendations">Aanbevelingen</TabsTrigger>
-                <TabsTrigger value="full-report">Volledig Rapport</TabsTrigger>
-              </TabsList>
+            if (reportId) {
+              setSaved(true);
+              console.log('Report saved with ID:', reportId);
+            }
+          } catch (saveError) {
+            console.error('Failed to save report to Convex:', saveError);
+            setError('Analyse voltooid maar rapport kon niet worden opgeslagen');
+          }
+        }
+      } else {
+        throw new Error('Onverwachte response structuur van API');
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+      setError(error instanceof Error ? error.message : 'Fout bij het analyseren van de afbeeldingen');
+    } finally {
+      setLoading(false);
+    }
+  }, [uploadedImages, selectedPatient, createReport]);
 
-              <div ref={reportRef}>
-                <TabsContent value="findings" className="space-y-4">
-                  <ReportSectionCard
-                    icon={<Thermometer className="w-5 h-5" />}
-                    section={report.thermographicFindings}
-                    color="blue"
-                  />
-                  <ReportSectionCard
-                    icon={<Stethoscope className="w-5 h-5" />}
-                    section={report.anamnesis}
-                    color="green"
-                  />
-                </TabsContent>
-
-                <TabsContent value="interpretation" className="space-y-4">
-                  <ReportSectionCard
-                    icon={<Brain className="w-5 h-5" />}
-                    section={report.interpretation}
-                    color="purple"
-                  />
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Target className="w-5 h-5" />
-                        <span>Differentiaal Diagnoses</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {report.differentialDiagnoses.map((diagnosis, index) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
-                              {index + 1}
-                            </Badge>
-                            <span className="text-sm">{diagnosis}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="recommendations" className="space-y-4">
-                  <ReportSectionCard
-                    icon={<TrendingUp className="w-5 h-5" />}
-                    section={report.recommendations}
-                    color="orange"
-                  />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Clock className="w-5 h-5" />
-                          <span>Urgentie Niveau</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Badge 
-                          variant={
-                            report.urgencyLevel === 'immediate' ? 'destructive' :
-                            report.urgencyLevel === 'urgent' ? 'default' :
-                            'secondary'
-                          }
-                          className="text-sm"
-                        >
-                          {report.urgencyLevel === 'immediate' ? 'Onmiddellijk' :
-                           report.urgencyLevel === 'urgent' ? 'Spoedig' :
-                           'Routine'}
-                        </Badge>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center space-x-2">
-                          <Activity className="w-5 h-5" />
-                          <span>Follow-up Planning</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-600">
-                          Controle thermografie aanbevolen na 4 weken
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="full-report">
-                  <Card>
-                    <CardContent className="p-6">
-                      <pre className="whitespace-pre-wrap text-sm font-mono bg-gray-50 p-4 rounded-lg overflow-auto max-h-96">
-                        {generateReportText(report)}
-                      </pre>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </div>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
-
-interface ReportSectionCardProps {
-  icon: React.ReactNode;
-  section: ReportSection;
-  color: 'blue' | 'green' | 'purple' | 'orange';
-}
-
-function ReportSectionCard({ icon, section, color }: ReportSectionCardProps) {
-  const colorClasses = {
-    blue: 'border-blue-200 bg-blue-50',
-    green: 'border-green-200 bg-green-50',
-    purple: 'border-purple-200 bg-purple-50',
-    orange: 'border-orange-200 bg-orange-50',
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'normaal': return 'text-green-600 bg-green-50 border-green-200';
+      case 'verhoogd': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'verhoogde temperatuur': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'afwijkend': return 'text-red-600 bg-red-50 border-red-200';
+      case 'hoge temperatuur': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
   };
 
-  const iconColorClasses = {
-    blue: 'text-blue-600',
-    green: 'text-green-600',
-    purple: 'text-purple-600',
-    orange: 'text-orange-600',
+  const formatFindings = (findings: string[]) => {
+    return findings.map((finding, index) => (
+      <li key={index} className="text-sm text-gray-700">{finding}</li>
+    ));
   };
 
   return (
-    <Card className={`border-2 ${colorClasses[color]}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className={`flex items-center space-x-2 ${iconColorClasses[color]}`}>
-            {icon}
-            <span>{section.title}</span>
-          </div>
-          <Badge variant="outline" className="bg-white">
-            {section.confidence}% betrouwbaar
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-gray-700 mb-4">{section.content}</p>
-        {section.findings.length > 0 && (
-          <div className="space-y-2">
-            <h5 className="font-semibold text-sm text-gray-900">Specifieke Bevindingen:</h5>
-            <ul className="space-y-1">
-              {section.findings.map((finding, index) => (
-                <li key={index} className="flex items-start space-x-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>{finding}</span>
-                </li>
-              ))}
-            </ul>
+    <div className="space-y-4">
+      {/* Analysis Controls */}
+      <div className="space-y-3">
+        {uploadedImages.length === 0 && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Upload thermografische beelden om AI-analyse te starten
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {selectedPatient && (
+          <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <Eye className="h-4 w-4 text-blue-600" />
+            <span className="text-sm text-blue-800">
+              Analyse wordt gekoppeld aan patiënt: <strong>{selectedPatient.patientName}</strong>
+            </span>
           </div>
         )}
-      </CardContent>
-    </Card>
+        
+        <Button 
+          onClick={handleAnalyze}
+          disabled={uploadedImages.length === 0 || loading}
+          className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300"
+          size="lg"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              AI Analyseert...
+            </>
+          ) : (
+            <>
+              <Brain className="w-4 h-4 mr-2" />
+              Start AI Thermografische Analyse
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success Message */}
+      {saved && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            Rapport succesvol opgeslagen voor patiënt {selectedPatient?.patientName}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Analysis Results */}
+      {analysis && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Activity className="w-5 h-5 mr-2 text-purple-600" />
+              AI Analyse Resultaten
+            </h3>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                PDF Export
+              </Button>
+              <Button variant="outline" size="sm">
+                <FileText className="w-4 h-4 mr-2" />
+                Rapport Delen
+              </Button>
+            </div>
+          </div>
+
+          {/* Temperature Analysis per Region */}
+          <div className="grid gap-4">
+            {analysis.regions.map((region, index) => (
+              <Card key={index} className="border-l-4 border-purple-500">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-medium text-gray-900">
+                      {region.region}
+                    </CardTitle>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="font-mono text-sm">
+                        {region.temperature}
+                      </Badge>
+                      <Badge 
+                        variant="outline" 
+                        className={`border ${getStatusColor(region.status)}`}
+                      >
+                        {region.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  {region.findings.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Bevindingen:</h4>
+                      <ul className="space-y-1 list-disc list-inside">
+                        {formatFindings(region.findings)}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Summary */}
+          <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+            <CardHeader>
+              <CardTitle className="flex items-center text-purple-900">
+                <FileText className="w-5 h-5 mr-2" />
+                Samenvatting Analyse
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700 leading-relaxed">{analysis.summary}</p>
+            </CardContent>
+          </Card>
+
+          {/* Recommendations */}
+          {analysis.recommendations.length > 0 && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="flex items-center text-orange-900">
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                  Aanbevelingen
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {analysis.recommendations.map((rec, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <ArrowRight className="w-4 h-4 mt-0.5 text-orange-600 flex-shrink-0" />
+                      <span className="text-gray-700">{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Status Info */}
+          <div className="flex items-center justify-between text-sm text-gray-500 pt-2 border-t">
+            <div className="flex items-center space-x-1">
+              <Clock className="w-4 h-4" />
+              <span>Geanalyseerd: {new Date().toLocaleString('nl-NL')}</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span>Beelden: {uploadedImages.length}</span>
+              {selectedPatient && (
+                <span>Patiënt: {selectedPatient.patientName}</span>
+              )}
+              {aatReport && (
+                <span>Betrouwbaarheid: {aatReport.confidence}%</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

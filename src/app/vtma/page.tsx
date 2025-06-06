@@ -24,14 +24,19 @@ import {
 import { VTMAUpload } from '@/components/vtma/vtma-upload';
 import { VTMAReportViewer } from '@/components/vtma/vtma-report-viewer';
 import { PatientSelector } from '@/components/vtma/vtma-patient-selector';
-import { DemoPatient, getAllDemoPatients } from '@/lib/demo-data';
+import { Patient } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useQuery } from 'convex/react';
+import { api } from '@/../convex/_generated/api';
 
 export default function VTMAPage() {
   const router = useRouter();
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [activeView, setActiveView] = useState('workflow');
-  const [selectedPatient, setSelectedPatient] = useState<DemoPatient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  
+  // Fetch all patients from Convex
+  const allPatients = useQuery(api.patients.getAll) || [];
 
   const sidebarItems = [
     { 
@@ -76,7 +81,7 @@ export default function VTMAPage() {
     router.push('/patient/add');
   };
 
-  const handlePatientSelect = (patient: DemoPatient | null) => {
+  const handlePatientSelect = (patient: Patient | null) => {
     setSelectedPatient(patient);
   };
 
@@ -286,7 +291,7 @@ export default function VTMAPage() {
 
               {/* Patient Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {getAllDemoPatients().map((patient) => {
+                {allPatients.map((patient) => {
                   const getPatientInitials = (name: string): string => {
                     return name.split(' ').map(n => n[0]).join('').toUpperCase();
                   };
@@ -314,7 +319,7 @@ export default function VTMAPage() {
                   };
                   
                   return (
-                    <Card key={patient.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <Card key={patient._id} className="hover:shadow-lg transition-shadow cursor-pointer">
                       <CardContent className="p-4">
                         {/* Patient Header */}
                         <div className="flex items-center space-x-3 mb-3">
@@ -359,7 +364,7 @@ export default function VTMAPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-gray-500">Laatste update:</span>
                             <span className="text-gray-900">
-                              {new Date(patient.lastUpdated).toLocaleDateString('nl-NL')}
+                              {new Date(patient._creationTime).toLocaleDateString('nl-NL')}
                             </span>
                           </div>
                         </div>

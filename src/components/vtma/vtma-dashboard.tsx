@@ -1,21 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { 
   Activity, 
   Users, 
   FileText, 
-  TrendingUp, 
   Clock, 
-  AlertTriangle,
   CheckCircle,
   Thermometer,
   File,
-  Heart,
-  Eye,
   Camera,
   Zap
 } from 'lucide-react';

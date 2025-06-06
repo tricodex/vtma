@@ -23,11 +23,13 @@ import {
   ChevronRight,
   Filter
 } from 'lucide-react';
-import { DemoPatient, searchDemoPatients } from '@/lib/demo-data';
+import { useQuery } from 'convex/react';
+import { api } from '@/../convex/_generated/api';
+import type { Patient } from '@/lib/types';
 
 interface PatientSelectorProps {
-  selectedPatient?: DemoPatient | null;
-  onPatientSelect: (patient: DemoPatient | null) => void;
+  selectedPatient?: Patient | null;
+  onPatientSelect: (patient: Patient | null) => void;
   onAddNew: () => void;
   className?: string;
 }
@@ -39,19 +41,34 @@ export function PatientSelector({
   className = "" 
 }: PatientSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredPatients, setFilteredPatients] = useState<DemoPatient[]>([]);
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [filterSpecies, setFilterSpecies] = useState<string>('all');
 
+  // Fetch all patients from Convex
+  const allPatients = useQuery(api.patients.getAll) || [];
+
   useEffect(() => {
-    let patients = searchDemoPatients(searchQuery);
+    let patients = allPatients;
     
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const lowerQuery = searchQuery.toLowerCase();
+      patients = patients.filter((patient: Patient) => 
+        patient.patientName.toLowerCase().includes(lowerQuery) ||
+        patient.patientNumber.toLowerCase().includes(lowerQuery) ||
+        patient.breed.toLowerCase().includes(lowerQuery) ||
+        patient.ownerName.toLowerCase().includes(lowerQuery)
+      );
+    }
+    
+    // Filter by species
     if (filterSpecies !== 'all') {
-      patients = patients.filter(p => p.species === filterSpecies);
+      patients = patients.filter((patient: Patient) => patient.species === filterSpecies);
     }
     
     setFilteredPatients(patients);
-  }, [searchQuery, filterSpecies]);
+  }, [searchQuery, filterSpecies, allPatients]);
 
   const getPatientInitials = (name: string): string => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -192,9 +209,9 @@ export function PatientSelector({
               ) : (
                 filteredPatients.map((patient) => (
                   <div
-                    key={patient.id}
+                    key={patient._id}
                     className={`p-2 rounded-lg border cursor-pointer transition-colors hover:bg-blue-50 hover:border-blue-200 ${
-                      selectedPatient?.id === patient.id 
+                      selectedPatient?._id === patient._id 
                         ? 'bg-blue-50 border-blue-300' 
                         : 'bg-white border-gray-200'
                     }`}
@@ -249,7 +266,7 @@ export function PatientSelector({
                       <div className="text-right text-xs text-gray-400">
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-3 w-3" />
-                          <span>{new Date(patient.lastUpdated).toLocaleDateString('nl-NL')}</span>
+                          <span>{new Date(patient._creationTime).toLocaleDateString('nl-NL')}</span>
                         </div>
                       </div>
                     </div>

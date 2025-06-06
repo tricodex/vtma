@@ -274,7 +274,7 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
             disabled={isAnalyzing}
           >
             <Settings className="w-4 h-4 mr-2" />
-            {isAnalyzing ? 'AI Analyseert...' : 'Start AI Analyse'}
+            {isAnalyzing ? 'AI Analyseert...' : 'Analyse'}
           </Button>
         </div>
       )}

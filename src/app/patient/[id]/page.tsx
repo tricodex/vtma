@@ -20,10 +20,8 @@ import {
   Stethoscope,
   Heart,
   Activity,
-  Eye,
   AlertTriangle,
-  CheckCircle,
-  Download
+  CheckCircle
 } from 'lucide-react';
 import { DemoPatient, getDemoPatient } from '@/lib/demo-data';
 
