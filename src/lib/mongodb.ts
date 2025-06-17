@@ -94,7 +94,7 @@ export async function getDocumentsCollection(): Promise<Collection<DocumentChunk
 
 export async function getReportsCollection(): Promise<Collection<ReportSearchDocument>> {
   const database = await connectToMongoDB();
-  return database.collection<ReportSearchDocument>('documents');
+  return database.collection<ReportSearchDocument>('reports');
 }
 
 // Vector search functions

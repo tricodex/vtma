@@ -251,7 +251,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
               
               // Create vector search embeddings for the report
               try {
-                await fetch('/api/process-report-embeddings', {
+                const embeddingResponse = await fetch('/api/process-report-embeddings', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -260,7 +260,13 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
                     reportData: result
                   })
                 });
-                console.log('Report embeddings created successfully');
+                
+                if (!embeddingResponse.ok) {
+                  const errorData = await embeddingResponse.json();
+                  console.error('Embedding API error:', errorData);
+                } else {
+                  console.log('Report embeddings created successfully');
+                }
               } catch (embeddingError) {
                 console.error('Failed to create report embeddings:', embeddingError);
                 // Don't fail the main report creation for this

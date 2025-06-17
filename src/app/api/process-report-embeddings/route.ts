@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processReportForSearch } from '@/lib/document-processor';
+import { processReportForSearch } from '@/lib/report-processor';
 
 // Handle POST requests to process report embeddings
 export async function POST(request: NextRequest) {
