@@ -18,6 +18,7 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  BookOpen,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/language-context';
 

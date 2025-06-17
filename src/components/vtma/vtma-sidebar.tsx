@@ -1,13 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import {
   Upload,
   Users,
   BarChart3,
   Settings,
   HelpCircle,
-  Stethoscope,
   FileText,
   Calendar,
   Brain
@@ -97,8 +97,15 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <div className="flex items-center cursor-pointer">
-                <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg mr-2">
-                  <Stethoscope className="w-4 h-4 text-white" />
+                <div className="relative w-8 h-12 mr-2 flex-shrink-0">
+                  <Image
+                    src="/vtma-logo.png"
+                    alt="VTMA Logo"
+                    fill
+                    className="object-contain"
+                    sizes="32px"
+                    priority
+                  />
                 </div>
                 <div>
                   <span className="text-base font-semibold">{t('sidebar.vtma')}</span>
