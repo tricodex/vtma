@@ -16,10 +16,12 @@ import {
   User,
   Bot,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Plus
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { VTMADocumentUploadModal } from './vtma-document-upload-modal';
 
 interface ChatMessage {
   id: string;
@@ -62,6 +64,7 @@ export function VTMAAIChat({ selectedPatientId, className }: VTMAAIChatProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSources, setShowSources] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -242,15 +245,26 @@ export function VTMAAIChat({ selectedPatientId, className }: VTMAAIChatProps) {
   return (
     <Card className={`flex flex-col h-[600px] ${className}`}>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center space-x-2">
-          <Brain className="w-5 h-5 text-purple-600" />
-          <span>{t('aiChat.title')}</span>
-          {selectedPatientId && (
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {t('aiChat.patientContextActive')}
-            </Badge>
-          )}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2">
+            <Brain className="w-5 h-5 text-purple-600" />
+            <span>{t('aiChat.title')}</span>
+            {selectedPatientId && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                {t('aiChat.patientContextActive')}
+              </Badge>
+            )}
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowUploadModal(true)}
+            className="flex items-center space-x-1"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('aiChat.addKnowledge')}</span>
+          </Button>
+        </div>
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col p-4 space-y-4">
@@ -376,6 +390,16 @@ export function VTMAAIChat({ selectedPatientId, className }: VTMAAIChatProps) {
           </Button>
         </div>
       </CardContent>
+      
+      {/* Document Upload Modal */}
+      <VTMADocumentUploadModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUploadComplete={() => {
+          // Optionally refresh or show a success message
+          console.log('Documents uploaded successfully');
+        }}
+      />
     </Card>
   );
 } 
