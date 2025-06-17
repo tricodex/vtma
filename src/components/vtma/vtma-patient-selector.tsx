@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Filter
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { useQuery } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
 import type { Patient } from '@/lib/types';
@@ -40,12 +41,14 @@ export function PatientSelector({
   onAddNew,
   className = "" 
 }: PatientSelectorProps) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [filterSpecies, setFilterSpecies] = useState<string>('all');
 
   // Fetch all patients from Convex
-  const allPatients = useQuery(api.patients.getAll) || [];
+  const allPatientsQuery = useQuery(api.patients.getAll);
+  const allPatients = useMemo(() => allPatientsQuery || [], [allPatientsQuery]);
 
   // Memoized filtered patients to prevent infinite loops
   const filteredPatients = useMemo(() => {
@@ -139,8 +142,8 @@ export function PatientSelector({
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
                   <div className="flex-1">
-                    <span className="font-medium text-gray-600">Selecteer Patiënt</span>
-                    <div className="text-sm text-gray-400">Kies bestaande patiënt of voeg nieuwe toe</div>
+                    <span className="font-medium text-gray-600">{t('workflow.selectPatient')}</span>
+                    <div className="text-sm text-gray-400">{t('workflow.selectOrAddPatient')}</div>
                   </div>
                 </>
               )}
@@ -160,7 +163,7 @@ export function PatientSelector({
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Zoek op naam, nummer, ras..."
+                    placeholder={t('workflow.searchPatients') as string}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -174,11 +177,11 @@ export function PatientSelector({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Alle dieren</SelectItem>
-                      <SelectItem value="paard">Paarden</SelectItem>
-                      <SelectItem value="hond">Honden</SelectItem>
-                      <SelectItem value="kat">Katten</SelectItem>
-                      <SelectItem value="rund">Runderen</SelectItem>
+                      <SelectItem value="all">{t('workflow.allAnimals')}</SelectItem>
+                      <SelectItem value="paard">{t('workflow.horses')}</SelectItem>
+                      <SelectItem value="hond">{t('workflow.dogs')}</SelectItem>
+                      <SelectItem value="kat">{t('workflow.cats')}</SelectItem>
+                      <SelectItem value="rund">{t('workflow.cattle')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -193,7 +196,7 @@ export function PatientSelector({
                   className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100 whitespace-nowrap"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Nieuwe Patiënt
+                  {t('workflow.addNewPatient')}
                 </Button>
               </div>
             </div>
@@ -203,8 +206,8 @@ export function PatientSelector({
               {filteredPatients.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <User className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                  <p>Geen patiënten gevonden</p>
-                  <p className="text-sm">Probeer een andere zoekopdracht</p>
+                  <p>{t('workflow.noMatchingPatients')}</p>
+                  <p className="text-sm">{t('common.search')}</p>
                 </div>
               ) : (
                 filteredPatients.map((patient) => (

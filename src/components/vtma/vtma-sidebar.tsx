@@ -11,6 +11,7 @@ import {
   FileText,
   Calendar
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 import {
   Sidebar,
@@ -30,53 +31,55 @@ interface VTMASidebarProps extends React.ComponentProps<typeof Sidebar> {
   onViewChange: (view: string) => void;
 }
 
-const mainMenuItems = [
-  {
-    id: 'workflow',
-    label: 'Workflow',
-    description: 'Upload, Patiënt & Rapport',
-    icon: Upload,
-  },
-  {
-    id: 'patients',
-    label: 'Patiënten',
-    description: 'Patiënt overzicht',
-    icon: Users,
-  },
-  {
-    id: 'reports',
-    label: 'Rapporten',
-    description: 'Gegenereerde rapporten',
-    icon: FileText,
-  },
-  {
-    id: 'analytics',
-    label: 'Analyse',
-    description: 'Statistieken & trends',
-    icon: BarChart3,
-  },
-  {
-    id: 'calendar',
-    label: 'Planning',
-    description: 'Afspraken & planning',
-    icon: Calendar,
-  },
-];
-
-const systemItems = [
-  {
-    id: 'settings',
-    label: 'Instellingen',
-    icon: Settings,
-  },
-  {
-    id: 'help',
-    label: 'Hulp',
-    icon: HelpCircle,
-  },
-];
-
 export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarProps) {
+  const { t } = useLanguage();
+  
+  const mainMenuItems = [
+    {
+      id: 'workflow',
+      label: t('sidebar.workflow.label'),
+      description: t('sidebar.workflow.description'),
+      icon: Upload,
+    },
+    {
+      id: 'patients',
+      label: t('sidebar.patients.label'),
+      description: t('sidebar.patients.description'),
+      icon: Users,
+    },
+    {
+      id: 'reports',
+      label: t('sidebar.reports.label'),
+      description: t('sidebar.reports.description'),
+      icon: FileText,
+    },
+    {
+      id: 'analytics',
+      label: t('sidebar.analytics.label'),
+      description: t('sidebar.analytics.description'),
+      icon: BarChart3,
+    },
+    {
+      id: 'calendar',
+      label: t('sidebar.calendar.label'),
+      description: t('sidebar.calendar.description'),
+      icon: Calendar,
+    },
+  ];
+
+  const systemItems = [
+    {
+      id: 'settings',
+      label: t('sidebar.settings'),
+      icon: Settings,
+    },
+    {
+      id: 'help',
+      label: t('sidebar.help'),
+      icon: HelpCircle,
+    },
+  ];
+  
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -91,8 +94,8 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
                   <Stethoscope className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <span className="text-base font-semibold">VTMA</span>
-                  <div className="text-xs text-gray-500">Thermografie Systeem</div>
+                  <span className="text-base font-semibold">{t('sidebar.vtma')}</span>
+                  <div className="text-xs text-gray-500">{t('sidebar.thermographySystem')}</div>
                 </div>
               </div>
             </SidebarMenuButton>
@@ -102,7 +105,7 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Hoofd Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.mainMenu')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainMenuItems.map((item) => {
@@ -113,7 +116,7 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
                     <SidebarMenuButton
                       onClick={() => onViewChange(item.id)}
                       isActive={isActive}
-                      tooltip={item.description}
+                      tooltip={item.description as string}
                       className="data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700 data-[active=true]:border-l-4 data-[active=true]:border-blue-600"
                     >
                       <Icon className="w-5 h-5" />
@@ -130,7 +133,7 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Systeem</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.system')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {systemItems.map((item) => {
@@ -139,7 +142,7 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       onClick={() => onViewChange(item.id)}
-                      tooltip={item.label}
+                      tooltip={item.label as string}
                     >
                       <Icon className="w-4 h-4" />
                       <span>{item.label}</span>

@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from '@/lib/utils'
 import { Toaster } from '@/components/ui/sonner'
 import { ConvexClientProvider } from "./ConvexClientProvider";
+import { LanguageProvider } from '@/lib/i18n/language-context';
 
 // Professional medical fonts based on industry research
 const medicalSans = Inter({
@@ -51,10 +52,12 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ConvexClientProvider>
-          <div vaul-drawer-wrapper="" className="bg-background">
-            {children}
-          </div>
-          <Toaster />
+          <LanguageProvider>
+            <div vaul-drawer-wrapper="" className="bg-background">
+              {children}
+            </div>
+            <Toaster />
+          </LanguageProvider>
         </ConvexClientProvider>
       </body>
     </html>

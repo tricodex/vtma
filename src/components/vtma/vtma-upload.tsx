@@ -17,6 +17,7 @@ import {
   Camera,
   Settings
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface VTMAUploadProps {
   onImagesUploaded: (images: string[]) => void;
@@ -40,6 +41,7 @@ interface UploadedFile {
 }
 
 export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps) {
+  const { t } = useLanguage();
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
@@ -106,7 +108,7 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
     // Update parent component with base64 data for API compatibility
     const base64Images = newFiles.map(f => f.base64);
     onImagesUploaded([...uploadedImages, ...base64Images]);
-  }, [uploadedImages, onImagesUploaded]);
+  }, [uploadedImages, onImagesUploaded, setOptimisticFiles]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -163,13 +165,13 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
           </div>
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {isDragActive ? 'Sleep bestanden hier' : 'Thermografische beelden uploaden'}
+              {isDragActive ? t('upload.dropHere') : t('upload.uploadTitle')}
             </h3>
             <p className="text-gray-600 mb-4">
-              Sleep thermografische beelden hier of klik om te selecteren
+              {t('upload.uploadDescription')}
             </p>
             <p className="text-sm text-gray-500">
-              Ondersteunde formaten: JPG, PNG, TIFF (Max 50MB per bestand)
+              {t('upload.acceptedFormats')}
             </p>
           </div>
         </div>
@@ -179,13 +181,11 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
       <Alert>
         <Camera className="h-4 w-4" />
         <AlertDescription>
-          <strong>Richtlijnen voor optimale beeldkwaliteit:</strong>
+          <strong>{t('upload.guidelines')}:</strong>
           <ul className="mt-2 space-y-1 text-sm">
-            <li>• Gebruik een gecalibreerde infraroodcamera (min. 320x240 resolutie)</li>
-            <li>• Zorg voor stabiele omgevingstemperatuur (18-24°C)</li>
-            <li>• Vermijd directe zonlicht en tocht</li>
-            <li>• Laat het dier 15-30 minuten acclimatiseren</li>
-            <li>• Stel emissiviteit in op 0.98 voor dierenhuid</li>
+            {(t('upload.guidelinesList') as unknown as string[]).map((guideline, index) => (
+              <li key={index}>• {guideline}</li>
+            ))}
           </ul>
         </AlertDescription>
       </Alert>
@@ -196,7 +196,7 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
           <CardContent className="p-4">
             <h4 className="font-semibold text-gray-900 mb-4 flex items-center">
               <FileImage className="w-5 h-5 mr-2" />
-              Geüploade Bestanden ({files.length})
+              {t('upload.uploadedFiles')} ({files.length})
             </h4>
             <div className="space-y-4">
               {optimisticFiles.map((file) => (
@@ -218,13 +218,13 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
                         {file.status === 'completed' && (
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                             <CheckCircle className="w-3 h-3 mr-1" />
-                            Compleet
+                            {t('upload.complete')}
                           </Badge>
                         )}
                         {file.status === 'error' && (
                           <Badge variant="destructive">
                             <AlertCircle className="w-3 h-3 mr-1" />
-                            Error
+                            {t('common.error')}
                           </Badge>
                         )}
                         <Button
@@ -242,7 +242,7 @@ export function VTMAUpload({ onImagesUploaded, uploadedImages }: VTMAUploadProps
                       <div className="flex text-xs text-gray-500">
                         <span>{formatFileSize(file.size)}</span>
                         <span className="mx-2">•</span>
-                        <span>Kwaliteit: {getThermalQuality(file.name)}</span>
+                        <span>{t('upload.quality')}: {getThermalQuality(file.name)}</span>
                       </div>
                       
                       {file.status === 'uploading' && (

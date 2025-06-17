@@ -12,6 +12,7 @@ import { useMutation } from 'convex/react';
 import { api } from '@/../convex/_generated/api';
 import ReactMarkdown from 'react-markdown';
 import jsPDF from 'jspdf';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface VTMAReportViewerProps {
   uploadedImages: string[];
@@ -73,6 +74,7 @@ interface AAT_AnalysisResult {
 }
 
 export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReportViewerProps) {
+  const { t } = useLanguage();
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [aatReport, setAATReport] = useState<AAT_AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -84,7 +86,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
 
   const downloadPDF = useCallback(async () => {
     if (!aatReport) {
-      setError('Geen rapport beschikbaar voor PDF export');
+      setError(t('report.noReportAvailable') as string);
       return;
     }
 
@@ -170,9 +172,9 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
       
     } catch (error) {
       console.error('PDF generation failed:', error);
-      setError('Fout bij het genereren van PDF rapport');
+      setError(t('report.errorGenerating') as string);
     }
-  }, [aatReport, selectedPatient]);
+  }, [aatReport, selectedPatient, t]);
 
   const handleAnalyze = useCallback(async () => {
     if (uploadedImages.length === 0) {
@@ -214,13 +216,13 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
         // Create simplified analysis for UI display from thermographic findings
         const simplifiedAnalysis: AnalysisResult = {
           regions: [{
-            region: 'Thermografische Gebieden',
-            temperature: 'Variabel',
-            status: result.urgencyLevel === 'immediate' ? 'afwijkend' : 
-                    result.urgencyLevel === 'urgent' ? 'verhoogd' : 'normaal',
+            region: t('report.thermographicAreas') as string,
+            temperature: t('report.variable') as string,
+            status: result.urgencyLevel === 'immediate' ? t('report.abnormal') as string : 
+                    result.urgencyLevel === 'urgent' ? t('report.elevated') as string : t('report.normal') as string,
             findings: result.thermographicFindings.findings || []
           }],
-          summary: result.thermographicFindings.content || 'Analyse voltooid',
+          summary: result.thermographicFindings.content || t('report.analysisComplete') as string,
           recommendations: result.recommendations.findings || []
         };
         setAnalysis(simplifiedAnalysis);
@@ -249,19 +251,19 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
             }
           } catch (saveError) {
             console.error('Failed to save report to Convex:', saveError);
-            setError('Analyse voltooid maar rapport kon niet worden opgeslagen');
+            setError(t('report.analysisFailed') as string);
           }
         }
       } else {
-        throw new Error('Onverwachte response structuur van API');
+        throw new Error(t('report.unexpectedResponse') as string);
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      setError(error instanceof Error ? error.message : 'Fout bij het analyseren van de afbeeldingen');
+      setError(error instanceof Error ? error.message : t('report.errorAnalyzing') as string);
     } finally {
       setLoading(false);
     }
-  }, [uploadedImages, selectedPatient, createReport]);
+  }, [uploadedImages, selectedPatient, createReport, t]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -284,7 +286,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Upload thermografische beelden om AI-analyse te starten
+              {t('report.uploadImagesFirst')}
             </AlertDescription>
           </Alert>
         )}
@@ -293,7 +295,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
           <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <Eye className="h-4 w-4 text-blue-600" />
             <span className="text-sm text-blue-800">
-              Analyse wordt gekoppeld aan patiënt: <strong>{selectedPatient.patientName}</strong>
+              {t('report.analysisLinkedTo')}: <strong>{selectedPatient.patientName}</strong>
             </span>
           </div>
         )}
@@ -307,12 +309,12 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Analyseert...
+              {t('report.analyzing')}
             </>
           ) : (
             <>
               <Brain className="w-4 h-4 mr-2" />
-              Start Thermografische Analyse
+              {t('report.startAnalysis')}
             </>
           )}
         </Button>
@@ -331,7 +333,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            Rapport succesvol opgeslagen voor patiënt {selectedPatient?.patientName}
+            {t('report.reportSavedFor')} {selectedPatient?.patientName}
           </AlertDescription>
         </Alert>
       )}
@@ -342,7 +344,7 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <Activity className="w-5 h-5 mr-2 text-purple-600" />
-              Analyse Resultaten
+              {t('report.analysisResults')}
             </h3>
             <div className="flex space-x-2">
               <Button 
@@ -352,11 +354,11 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
                 disabled={!aatReport}
               >
                 <Download className="w-4 h-4 mr-2" />
-                PDF Export
+                {t('report.downloadPDF')}
               </Button>
               <Button variant="outline" size="sm">
                 <FileText className="w-4 h-4 mr-2" />
-                Rapport Delen
+                {t('common.share')} {t('report.title')}
               </Button>
             </div>
           </div>

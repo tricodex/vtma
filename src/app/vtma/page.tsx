@@ -13,6 +13,7 @@ import {
   BarChart3,
   Plus
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/language-context';
 import { VTMAUpload } from '@/components/vtma/vtma-upload';
 import { VTMAReportViewer } from '@/components/vtma/vtma-report-viewer';
 import { PatientSelector } from '@/components/vtma/vtma-patient-selector';
@@ -29,6 +30,7 @@ import { api } from '@/../convex/_generated/api';
 
 export default function VTMAPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [activeView, setActiveView] = useState('workflow');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -62,10 +64,10 @@ export default function VTMAPage() {
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-                      Thermografie Workflow
+                      {t('workflow.title')}
                     </h1>
                     <p className="text-gray-600">
-                      Complete workflow voor rapportage
+                      {t('workflow.subtitle')}
                     </p>
                   </div>
                   <div className="flex-1 max-w-2xl ml-8">
@@ -84,10 +86,10 @@ export default function VTMAPage() {
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center space-x-2 text-lg">
                       <Upload className="w-5 h-5 text-blue-600" />
-                      <span>1. Upload Thermografische Beelden</span>
+                      <span>{t('workflow.steps.uploadImages.title')}</span>
                     </CardTitle>
                     <CardDescription>
-                      Upload thermografische beelden voor analyse
+                      {t('workflow.steps.uploadImages.description')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -103,18 +105,18 @@ export default function VTMAPage() {
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center space-x-2 text-lg">
                       <File className="w-5 h-5 text-purple-600" />
-                      <span>2. Rapport Generatie</span>
+                      <span>{t('workflow.steps.generateReport.title')}</span>
                       {selectedPatient && (
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Patiënt: {selectedPatient.patientName}
+                          {t('patient.identification')}: {selectedPatient.patientName}
                         </Badge>
                       )}
                     </CardTitle>
                     <CardDescription>
-                      Geautomatiseerde rapportgeneratie gebaseerd op thermografische analyse
+                      {t('workflow.steps.generateReport.description')}
                       {selectedPatient && (
                         <span className="block text-xs mt-1 text-blue-600">
-                          Gebruikt patiëntgegevens van {selectedPatient.patientName} voor betere analyse
+                          {t('workflow.patientSelected')}: {selectedPatient.patientName}
                         </span>
                       )}
                     </CardDescription>
@@ -135,10 +137,10 @@ export default function VTMAPage() {
               <div className="mb-6 flex justify-between items-center">
                 <div>
                   <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                    Patiënten Overzicht
+                    {t('patientsView.title')}
                   </h1>
                   <p className="text-gray-600">
-                    Overzicht van alle geregistreerde patiënten
+                    {t('patientsView.subtitle')}
                   </p>
                 </div>
                 <Button 
@@ -146,7 +148,7 @@ export default function VTMAPage() {
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Nieuwe Patiënt
+                  {t('patientsView.newPatient')}
                 </Button>
               </div>
               
@@ -154,10 +156,10 @@ export default function VTMAPage() {
               <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                    DEMO MODUS
+                    {t('patientsView.demoMode')}
                   </Badge>
                   <span className="text-sm text-amber-700">
-                    Hieronder worden voorbeeldpatiënten getoond voor demonstratiedoeleinden
+                    {t('patientsView.demoNotice')}
                   </span>
                 </div>
               </div>
@@ -209,7 +211,7 @@ export default function VTMAPage() {
                               </h3>
                               <span className="text-lg">{getSpeciesEmoji(patient.species)}</span>
                               <Badge className="bg-orange-100 text-orange-800 text-xs">
-                                DEMO
+                                {t('patientsView.demo')}
                               </Badge>
                             </div>
                             <p className="text-sm text-gray-500">
@@ -221,17 +223,17 @@ export default function VTMAPage() {
                         {/* Patient Details */}
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-500">Geslacht:</span>
+                            <span className="text-gray-500">{t('patientsView.gender')}:</span>
                             <Badge variant="outline" className={getGenderBadgeColor(patient.gender)}>
                               {patient.gender}
                             </Badge>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-500">Leeftijd:</span>
+                            <span className="text-gray-500">{t('patientsView.age')}:</span>
                             <span className="text-gray-900">{patient.age}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-gray-500">Eigenaar:</span>
+                            <span className="text-gray-500">{t('patientsView.owner')}:</span>
                             <span className="text-gray-900 truncate">{patient.ownerName}</span>
                           </div>
                           <div className="flex items-center justify-between">
