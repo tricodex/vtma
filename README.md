@@ -301,9 +301,3 @@ Thermal Images → Gemini 2.0 Flash Vision
 - Safari 14+
 - Edge 90+
 
-## Data Privacy
-
-- Images processed in-memory only
-- No permanent image storage
-- Patient data encrypted in Convex
-- GDPR-compliant handling
