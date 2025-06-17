@@ -174,7 +174,7 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
             <div className="flex items-center">
               <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-              <span className="text-sm font-medium text-green-800">Systeem Online</span>
+              <span className="text-sm font-medium text-green-800">System Online</span>
             </div>
           </div>
         </div>

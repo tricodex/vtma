@@ -43,3 +43,6 @@ next-env.d.ts
 .claude/
 CLAUDE.md
 .cursor/
+
+# Backup routes (contains routes with pdfjs-dist that cause build errors)
+/backup-routes/
