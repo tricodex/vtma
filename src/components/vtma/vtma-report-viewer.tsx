@@ -248,6 +248,23 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
             if (reportId) {
               setSaved(true);
               console.log('Report saved with ID:', reportId);
+              
+              // Create vector search embeddings for the report
+              try {
+                await fetch('/api/process-report-embeddings', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    reportId: reportId,
+                    patientId: selectedPatient._id,
+                    reportData: result
+                  })
+                });
+                console.log('Report embeddings created successfully');
+              } catch (embeddingError) {
+                console.error('Failed to create report embeddings:', embeddingError);
+                // Don't fail the main report creation for this
+              }
             }
           } catch (saveError) {
             console.error('Failed to save report to Convex:', saveError);

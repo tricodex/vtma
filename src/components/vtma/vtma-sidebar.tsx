@@ -9,7 +9,8 @@ import {
   HelpCircle,
   Stethoscope,
   FileText,
-  Calendar
+  Calendar,
+  Brain
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/language-context';
 
@@ -64,6 +65,12 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
       label: t('sidebar.calendar.label'),
       description: t('sidebar.calendar.description'),
       icon: Calendar,
+    },
+    {
+      id: 'ai-chat',
+      label: 'AI Assistent',
+      description: 'Chat met AI over thermografie',
+      icon: Brain,
     },
   ];
 

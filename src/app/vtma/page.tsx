@@ -19,6 +19,7 @@ import { VTMAReportViewer } from '@/components/vtma/vtma-report-viewer';
 import { PatientSelector } from '@/components/vtma/vtma-patient-selector';
 import { VTMASidebar } from '@/components/vtma/vtma-sidebar';
 import { VTMAHeader } from '@/components/vtma/vtma-header';
+import { VTMAAIChat } from '@/components/vtma/vtma-ai-chat';
 import {
   SidebarInset,
   SidebarProvider,
@@ -390,6 +391,25 @@ export default function VTMAPage() {
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {activeView === 'ai-chat' && (
+            <div className="p-6 max-w-7xl mx-auto">
+              <div className="mb-6">
+                <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+                  Thermografie Assistent
+                </h1>
+                <p className="text-gray-600">
+                  Stel vragen over thermografie rapporten en kennis
+                </p>
+              </div>
+              <div className="max-w-4xl mx-auto">
+                <VTMAAIChat 
+                  selectedPatientId={selectedPatient?._id}
+                  className="w-full"
+                />
+              </div>
             </div>
           )}
         </main>
