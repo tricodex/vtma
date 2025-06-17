@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { query, searchType, options = {} } = body;
+    
+    console.log('Vector search request:', { query, searchType, options });
 
     if (!query || typeof query !== 'string') {
       return NextResponse.json(
@@ -20,36 +22,43 @@ export async function POST(request: NextRequest) {
 
     let results;
 
-    switch (searchType) {
-      case 'documents':
-        results = await searchSimilarDocuments(
-          query,
-          options.limit || 5,
-          options.sourceType
-        );
-        break;
+    try {
+      switch (searchType) {
+        case 'documents':
+          results = await searchSimilarDocuments(
+            query,
+            options.limit || 5,
+            options.sourceType
+          );
+          break;
 
-      case 'reports':
-        results = await searchSimilarReports(
-          query,
-          options.limit || 5,
-          options.patientId
-        );
-        break;
+        case 'reports':
+          results = await searchSimilarReports(
+            query,
+            options.limit || 5,
+            options.patientId
+          );
+          break;
 
-      case 'hybrid':
-        results = await hybridSearch(query, options.limit || 10, {
-          sourceType: options.sourceType,
-          patientId: options.patientId,
-          weightVector: options.weightVector
-        });
-        break;
+        case 'hybrid':
+          results = await hybridSearch(query, options.limit || 10, {
+            sourceType: options.sourceType,
+            patientId: options.patientId,
+            weightVector: options.weightVector
+          });
+          break;
 
-      default:
-        return NextResponse.json(
-          { error: 'Invalid search type. Use "documents", "reports", or "hybrid"' },
-          { status: 400 }
-        );
+        default:
+          return NextResponse.json(
+            { error: 'Invalid search type. Use "documents", "reports", or "hybrid"' },
+            { status: 400 }
+          );
+      }
+    } catch (dbError) {
+      console.error('Database operation failed:', dbError);
+      // Return empty results if database is unavailable
+      results = [];
+      console.warn('Returning empty results due to database error');
     }
 
     return NextResponse.json({

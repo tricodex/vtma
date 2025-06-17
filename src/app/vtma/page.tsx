@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,11 @@ import {
   FileText, 
   Calendar,
   BarChart3,
-  Plus
+  Plus,
+  Eye,
+  Download,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/language-context';
 import { VTMAUpload } from '@/components/vtma/vtma-upload';
@@ -32,28 +36,32 @@ import { api } from '@/../convex/_generated/api';
 export default function VTMAPage() {
   const router = useRouter();
   const { t } = useLanguage();
+  const [isPending, startTransition] = useTransition();
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [activeView, setActiveView] = useState('workflow');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   
   // Fetch all patients from Convex
   const allPatients = useQuery(api.patients.getAll) || [];
-
-
+  
+  // Fetch all reports from Convex
+  const allReports = useQuery(api.reports.getAll) || [];
 
   const handleAddNewPatient = () => {
     router.push('/patient/add');
   };
 
   const handlePatientSelect = (patient: Patient | null) => {
-    setSelectedPatient(patient);
+    startTransition(() => {
+      setSelectedPatient(patient);
+    });
   };
 
   return (
     <SidebarProvider>
       <VTMASidebar 
         activeView={activeView} 
-        onViewChange={setActiveView}
+        onViewChange={(view) => startTransition(() => setActiveView(view))}
         variant="inset" 
       />
       <SidebarInset>
@@ -95,7 +103,7 @@ export default function VTMAPage() {
                   </CardHeader>
                   <CardContent>
                     <VTMAUpload 
-                      onImagesUploaded={setUploadedImages}
+                      onImagesUploaded={(images) => startTransition(() => setUploadedImages(images))}
                       uploadedImages={uploadedImages}
                     />
                   </CardContent>
@@ -277,8 +285,10 @@ export default function VTMAPage() {
                               variant="outline" 
                               className="flex-1"
                               onClick={() => {
-                                setSelectedPatient(patient);
-                                setActiveView('workflow');
+                                startTransition(() => {
+                                  setSelectedPatient(patient);
+                                  setActiveView('workflow');
+                                });
                               }}
                             >
                               Selecteren
@@ -317,28 +327,128 @@ export default function VTMAPage() {
             <div className="p-6 max-w-7xl mx-auto">
               <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                  Rapporten Archief
+                  {t('sidebar.reports.label')} Archief
                 </h1>
                 <p className="text-gray-600">
                   Overzicht van alle gegenereerde thermografie rapporten
                 </p>
               </div>
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center py-12">
-                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Geen rapporten beschikbaar
-                    </h3>
-                    <p className="text-gray-500 mb-4">
-                      Rapporten verschijnen hier nadat ze zijn gegenereerd
-                    </p>
-                    <Button onClick={() => setActiveView('workflow')}>
-                      Nieuw Rapport Maken
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              
+              {allReports.length === 0 ? (
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="text-center py-12">
+                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        Geen rapporten beschikbaar
+                      </h3>
+                      <p className="text-gray-500 mb-4">
+                        Rapporten verschijnen hier nadat ze zijn gegenereerd
+                      </p>
+                      <Button onClick={() => startTransition(() => setActiveView('workflow'))}>
+                        Nieuw Rapport Maken
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {allReports.map((report) => {
+                    const urgencyColors = {
+                      routine: 'bg-green-100 text-green-800',
+                      urgent: 'bg-orange-100 text-orange-800',
+                      immediate: 'bg-red-100 text-red-800'
+                    };
+                    
+                    const urgencyLabels = {
+                      routine: 'Routine',
+                      urgent: 'Urgent',
+                      immediate: 'Onmiddellijk'
+                    };
+                    
+                    return (
+                      <Card key={report._id} className="hover:shadow-lg transition-shadow">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center space-x-2">
+                              <FileText className="w-5 h-5 text-blue-600" />
+                              <CardTitle className="text-lg">
+                                {report.patient?.patientName || 'Onbekende Patiënt'}
+                              </CardTitle>
+                            </div>
+                            <Badge className={urgencyColors[report.urgencyLevel]}>
+                              {urgencyLabels[report.urgencyLevel]}
+                            </Badge>
+                          </div>
+                          <CardDescription className="mt-1">
+                            {report.patient?.species} - {report.patient?.breed}
+                          </CardDescription>
+                        </CardHeader>
+                        
+                        <CardContent className="space-y-3">
+                          {/* Confidence Score */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Betrouwbaarheid:</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-blue-600 rounded-full"
+                                  style={{ width: `${report.confidence}%` }}
+                                />
+                              </div>
+                              <span className="font-medium">{report.confidence}%</span>
+                            </div>
+                          </div>
+                          
+                          {/* Status */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Status:</span>
+                            <Badge variant={report.status === 'completed' ? 'default' : 'secondary'}>
+                              {report.status === 'completed' ? 'Voltooid' : 'In verwerking'}
+                            </Badge>
+                          </div>
+                          
+                          {/* Date */}
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Datum:</span>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="w-3 h-3 text-gray-400" />
+                              <span>{new Date(report._creationTime).toLocaleDateString('nl-NL')}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Owner */}
+                          {report.patient?.ownerName && (
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Eigenaar:</span>
+                              <span className="font-medium truncate">{report.patient.ownerName}</span>
+                            </div>
+                          )}
+                          
+                          {/* Actions */}
+                          <div className="flex space-x-2 pt-3 border-t">
+                            <Button 
+                              size="sm" 
+                              className="flex-1"
+                              onClick={() => {
+                                if (report.patient?._id && report._id) {
+                                  router.push(`/patient/${report.patient._id}/rapport/${report._id}`);
+                                }
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Bekijk
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 

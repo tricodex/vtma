@@ -1,6 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Configure runtime to allow larger payloads
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds timeout
+
 // Initialize Gemini AI
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY! 

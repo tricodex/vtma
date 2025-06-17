@@ -17,6 +17,13 @@ const nextConfig: NextConfig = {
   
   // External packages for server components
   serverExternalPackages: ['pdfjs-dist'],
+  
+  // Increase body size limit to 50MB for image uploads
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
+  },
 };
 
 export default nextConfig;

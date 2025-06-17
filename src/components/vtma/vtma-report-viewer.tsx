@@ -13,6 +13,7 @@ import { api } from '@/../convex/_generated/api';
 import ReactMarkdown from 'react-markdown';
 import jsPDF from 'jspdf';
 import { useLanguage } from '@/lib/i18n/language-context';
+import { compressMultipleImages, checkPayloadSize } from '@/lib/image-compression';
 
 interface VTMAReportViewerProps {
   uploadedImages: string[];
@@ -187,13 +188,22 @@ export function VTMAReportViewer({ uploadedImages, selectedPatient }: VTMAReport
     setSaved(false);
 
     try {
+      // Compress images before sending to reduce payload size
+      console.log('Compressing images before analysis...');
+      const compressedImages = await compressMultipleImages(uploadedImages, 1280, 0.8);
+      
+      // Check if payload is still too large
+      if (!checkPayloadSize(compressedImages, 10)) {
+        throw new Error('De afbeeldingen zijn te groot. Probeer minder afbeeldingen te uploaden of kleinere bestanden te gebruiken.');
+      }
+      
       const response = await fetch('/api/vtma/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          images: uploadedImages,
+          images: compressedImages,
           patient: selectedPatient
         }),
       });

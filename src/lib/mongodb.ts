@@ -17,14 +17,20 @@ export async function connectToMongoDB(): Promise<Db> {
   if (db) return db;
 
   try {
-    client = new MongoClient(process.env.MONGODB_URL!);
+    client = new MongoClient(process.env.MONGODB_URL!, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+    });
     await client.connect();
     db = client.db('vtma_thermography');
     console.log('Connected to MongoDB successfully');
     return db;
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    throw error;
+    // Reset connection on error
+    client = null;
+    db = null;
+    throw new Error(`Failed to connect to MongoDB: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
