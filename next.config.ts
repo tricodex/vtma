@@ -15,10 +15,8 @@ const nextConfig: NextConfig = {
     return config;
   },
   
-  // Experimental features for better module handling
-  experimental: {
-    serverComponentsExternalPackages: ['pdfjs-dist'],
-  },
+  // External packages for server components
+  serverExternalPackages: ['pdfjs-dist'],
 };
 
 export default nextConfig;

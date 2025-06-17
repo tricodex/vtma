@@ -18,8 +18,8 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
+import { useLanguage } from '@/lib/i18n/language-context';
 
 interface ChatMessage {
   id: string;
@@ -57,6 +57,7 @@ interface VTMAAIChatProps {
 }
 
 export function VTMAAIChat({ selectedPatientId, className }: VTMAAIChatProps) {
+  const { t, language } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,18 +79,11 @@ export function VTMAAIChat({ selectedPatientId, className }: VTMAAIChatProps) {
       setMessages([{
         id: '1',
         role: 'assistant',
-        content: `Hallo! Ik ben uw AI-assistent voor thermografie. Ik kan u helpen met:
-
-• **Vragen over thermografie rapporten** - Zoek informatie in bestaande rapporten
-• **Kennis over thermografie** - Gebruik de documentenbibliotheek met thermografie expertise
-• **Patiënt-specifieke analyses** - Als u een patiënt geselecteerd heeft
-• **Vergelijkende studies** - Zoek naar vergelijkbare gevallen
-
-Stel gerust uw vraag!`,
+        content: t('aiChat.greeting') as string,
         timestamp: new Date()
       }]);
     }
-  }, []);
+  }, [t, messages.length]);
 
   const performVectorSearch = async (query: string) => {
     try {
@@ -125,38 +119,39 @@ Stel gerust uw vraag!`,
     searchResults: SearchResult
   ): Promise<string> => {
     try {
-      const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      
       // Prepare context from search results
-      const contextDocuments = searchResults.documents?.map((doc) => 
-        `Document: ${doc.source}\n${doc.content}`
-      ).join('\n\n') || '';
-      
-      const contextReports = searchResults.reports?.map((report) => 
-        `Report Section (${report.section}): ${report.content}\nFindings: ${report.findings.join(', ')}`
-      ).join('\n\n') || '';
+      const contextArray = [
+        ...(searchResults.documents?.map((doc) => ({
+          text: `Document: ${doc.source}\n${doc.content}`,
+          type: 'document'
+        })) || []),
+        ...(searchResults.reports?.map((report) => ({
+          text: `Report Section (${report.section}): ${report.content}\nFindings: ${report.findings.join(', ')}`,
+          type: 'report'
+        })) || [])
+      ];
 
-      const systemPrompt = `Je bent een expert in veterinaire thermografie. Je helpt dierenartsen met het interpreteren van thermografie rapporten en beantwoordt vragen over thermografie bij paarden.
-
-CONTEXT VAN ZOEKRESULTATEN:
-${contextDocuments}
-
-${contextReports}
-
-Geef een nuttig, nauwkeurig en professioneel antwoord op basis van de beschikbare context. Als de informatie niet beschikbaar is in de context, zeg dat duidelijk. Gebruik Nederlandse terminologie voor veterinaire concepten.
-
-Gebruikersvraag: ${userMessage}`;
-
-      const response = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: systemPrompt
+      const response = await fetch('/api/vtma/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          context: contextArray,
+          language: language
+        })
       });
 
-      return response.candidates?.[0]?.content?.parts?.[0]?.text || 'Er ging iets mis bij het genereren van het antwoord.';
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate response');
+      }
+
+      const data = await response.json();
+      return data.response || t('aiChat.errorGenerating') as string;
       
     } catch (error) {
       console.error('AI response generation error:', error);
-      return 'Sorry, ik kan momenteel geen antwoord genereren. Probeer het later opnieuw.';
+      return t('aiChat.errorGenerating') as string;
     }
   };
 
@@ -182,14 +177,28 @@ Gebruikersvraag: ${userMessage}`;
       const aiResponse = await generateAIResponse(userMessage.content, searchResults);
       
       // Prepare sources
+      interface DocumentResult {
+        source: string;
+        content: string;
+        sourceType: 'pdf' | 'report' | 'patient_data';
+        score?: number;
+      }
+      
+      interface ReportResult {
+        section: string;
+        content: string;
+        sourceType?: string;
+        score?: number;
+      }
+      
       const sources = [
-        ...(searchResults.documents?.map((doc: { source: any; content: string; sourceType: any; score: any; }) => ({
+        ...(searchResults.documents?.map((doc: DocumentResult) => ({
           title: doc.source,
           content: doc.content.substring(0, 200) + '...',
           sourceType: doc.sourceType,
           score: doc.score
         })) || []),
-        ...(searchResults.reports?.map((report: { section: any; content: string; sourceType: string; score: any; }) => ({
+        ...(searchResults.reports?.map((report: ReportResult) => ({
           title: `Report - ${report.section}`,
           content: report.content.substring(0, 200) + '...',
           sourceType: (report.sourceType as 'pdf' | 'report' | 'patient_data') || 'report',
@@ -213,7 +222,7 @@ Gebruikersvraag: ${userMessage}`;
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Sorry, er is een fout opgetreden. Probeer het opnieuw.',
+        content: t('aiChat.errorOccurred') as string,
         timestamp: new Date()
       };
       
@@ -235,10 +244,10 @@ Gebruikersvraag: ${userMessage}`;
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center space-x-2">
           <Brain className="w-5 h-5 text-purple-600" />
-          <span>Thermografie Assistent</span>
+          <span>{t('aiChat.title')}</span>
           {selectedPatientId && (
             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              Patiënt context actief
+              {t('aiChat.patientContextActive')}
             </Badge>
           )}
         </CardTitle>
@@ -298,7 +307,7 @@ Gebruikersvraag: ${userMessage}`;
                       className="text-xs text-gray-600 hover:text-gray-800"
                     >
                       <Search className="w-3 h-3 mr-1" />
-                      {message.sources.length} bronnen gevonden
+                      {message.sources.length} {t('aiChat.sourcesFound')}
                       {showSources === message.id ? (
                         <ChevronUp className="w-3 h-3 ml-1" />
                       ) : (
@@ -336,7 +345,7 @@ Gebruikersvraag: ${userMessage}`;
             {loading && (
               <div className="flex items-center space-x-2 text-gray-500">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">AI denkt na...</span>
+                <span className="text-sm">{t('aiChat.thinking')}</span>
               </div>
             )}
           </div>
@@ -350,7 +359,7 @@ Gebruikersvraag: ${userMessage}`;
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Stel een vraag over thermografie..."
+            placeholder={t('aiChat.placeholder') as string}
             disabled={loading}
             className="flex-1"
           />

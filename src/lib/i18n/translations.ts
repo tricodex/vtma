@@ -72,6 +72,10 @@ export const translations = {
         label: 'Planning',
         description: 'Afspraken & planning',
       },
+      aiChat: {
+        label: 'AI Assistent',
+        description: 'Chat met AI over thermografie',
+      },
       settings: 'Instellingen',
       help: 'Hulp',
       
@@ -270,6 +274,26 @@ export const translations = {
       unauthorized: 'Niet geautoriseerd',
       serverError: 'Serverfout',
     },
+    
+    aiChat: {
+      title: 'Thermografie Assistent',
+      pageTitle: 'Thermografie Assistent',
+      pageSubtitle: 'Stel vragen over thermografie rapporten en kennis',
+      greeting: `Hallo! Ik ben uw AI-assistent voor thermografie. Ik kan u helpen met:
+
+• **Vragen over thermografie rapporten** - Zoek informatie in bestaande rapporten
+• **Kennis over thermografie** - Gebruik de documentenbibliotheek met thermografie expertise
+• **Patiënt-specifieke analyses** - Als u een patiënt geselecteerd heeft
+• **Vergelijkende studies** - Zoek naar vergelijkbare gevallen
+
+Stel gerust uw vraag!`,
+      patientContextActive: 'Patiënt context actief',
+      sourcesFound: 'bronnen gevonden',
+      thinking: 'AI denkt na...',
+      placeholder: 'Stel een vraag over thermografie...',
+      errorOccurred: 'Sorry, er is een fout opgetreden. Probeer het opnieuw.',
+      errorGenerating: 'Sorry, ik kan momenteel geen antwoord genereren. Probeer het later opnieuw.',
+    },
   },
   
   en: {
@@ -344,6 +368,10 @@ export const translations = {
       calendar: {
         label: 'Calendar',
         description: 'Appointments & planning',
+      },
+      aiChat: {
+        label: 'Assistant',
+        description: 'Thermography Assistant',
       },
       settings: 'Settings',
       help: 'Help',
@@ -542,6 +570,26 @@ export const translations = {
       notFound: 'Not found',
       unauthorized: 'Unauthorized',
       serverError: 'Server error',
+    },
+    
+    aiChat: {
+      title: 'Thermography Assistant',
+      pageTitle: 'Thermography Assistant',
+      pageSubtitle: 'Ask questions about thermography reports and knowledge',
+      greeting: `Hello! I am your AI assistant for thermography. I can help you with:
+
+• **Questions about thermography reports** - Search information in existing reports
+• **Thermography knowledge** - Use the document library with thermography expertise
+• **Patient-specific analyses** - If you have selected a patient
+• **Comparative studies** - Search for similar cases
+
+Feel free to ask your question!`,
+      patientContextActive: 'Patient context active',
+      sourcesFound: 'sources found',
+      thinking: 'AI is thinking...',
+      placeholder: 'Ask a question about thermography...',
+      errorOccurred: 'Sorry, an error occurred. Please try again.',
+      errorGenerating: 'Sorry, I cannot generate a response at the moment. Please try again later.',
     },
   },
 } as const;

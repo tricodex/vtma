@@ -68,8 +68,8 @@ export function VTMASidebar({ activeView, onViewChange, ...props }: VTMASidebarP
     },
     {
       id: 'ai-chat',
-      label: 'AI Assistent',
-      description: 'Chat met AI over thermografie',
+      label: t('sidebar.aiChat.label'),
+      description: t('sidebar.aiChat.description'),
       icon: Brain,
     },
   ];
