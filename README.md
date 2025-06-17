@@ -1,5 +1,7 @@
 # VTMA - Veterinary Thermography Medical Administration
 
+![VTMA Banner](public/vtma6.png)
+
 AI-powered administrative system for veterinary thermography. Reduces report generation from 45 minutes to 5 minutes while maintaining AAT (American Academy of Thermology) compliance.
 
 Live demo: [https://veterinaire-thermografie.vercel.app/](https://veterinaire-thermografie.vercel.app/)
@@ -19,6 +21,147 @@ Live demo: [https://veterinaire-thermografie.vercel.app/](https://veterinaire-th
 - **AI/ML**: Google Gemini 2.0 Flash API, text-embedding-004
 - **Database**: MongoDB Atlas (vector search), Convex (patient data)
 - **Package Manager**: Bun
+
+## Google Cloud Integration
+
+### Gemini 2.0 Flash for Image Analysis
+
+Direct multimodal analysis of thermographic images:
+
+```typescript
+// api/vtma/analyze/route.ts
+const response = await genAI.models.generateContent({
+  model: 'gemini-2.0-flash',
+  contents: [
+    { text: THERMOGRAPHY_ANALYSIS_PROMPT },
+    { text: patientContext },
+    { inlineData: { 
+      mimeType: 'image/jpeg', 
+      data: base64Image 
+    }},
+  ],
+  config: {
+    temperature: 0.1,  // Low temperature for medical accuracy
+    maxOutputTokens: 2048
+  }
+});
+```
+
+Gemini analyzes:
+- Temperature asymmetries (≥1°C difference)
+- Bilateral symmetry comparison
+- Hotspot/coldspot detection
+- Anatomical pattern correlation
+
+### Text Embeddings for Knowledge Base
+
+768-dimensional vectors using text-embedding-004:
+
+```typescript
+// lib/mongodb.ts
+const response = await genAI.models.embedContent({
+  model: 'text-embedding-004',
+  contents: text,
+  config: {
+    taskType: 'RETRIEVAL_DOCUMENT',  // Optimized for search
+  }
+});
+```
+
+## MongoDB Atlas Vector Search
+
+### Document Processing Pipeline
+
+PDF documents → Text extraction → Chunking → Embeddings → MongoDB:
+
+```typescript
+// lib/document-processor.ts
+const chunks = splitTextIntoChunks(text, 500);  // ~500 words per chunk
+
+for (const chunk of chunks) {
+  const embedding = await generateEmbedding(chunk, 'RETRIEVAL_DOCUMENT');
+  
+  documentChunks.push({
+    content: chunk,
+    source: filename,
+    sourceType: 'pdf',
+    metadata: {
+      language: detectLanguage(chunk),  // Auto-detect NL/EN
+      title: extractTitleFromFilename(filename)
+    },
+    embedding,  // 768-dimensional vector
+    createdAt: new Date()
+  });
+}
+```
+
+### Vector Search Implementation
+
+Hybrid search combining vector similarity with metadata filtering:
+
+```typescript
+// lib/mongodb.ts - searchSimilarDocuments()
+const pipeline = [
+  {
+    $vectorSearch: {
+      index: "vector_index",
+      queryVector: queryEmbedding,  // User query embedded
+      path: "embedding",
+      numCandidates: 50,
+      limit: 5,
+      filter: { sourceType: { $eq: sourceType } }  // Optional filtering
+    }
+  },
+  {
+    $project: {
+      content: 1,
+      source: 1,
+      metadata: 1,
+      score: { $meta: "vectorSearchScore" }  // Cosine similarity
+    }
+  }
+];
+```
+
+### MongoDB Indexes Configuration
+
+Two vector search indexes required:
+
+1. **Documents Collection** (`document_chunks`):
+```javascript
+{
+  "fields": [
+    {
+      "type": "vector",
+      "path": "embedding",
+      "numDimensions": 768,
+      "similarity": "cosine"
+    },
+    {
+      "type": "filter",
+      "path": "metadata.language"  // Enable language filtering
+    }
+  ]
+}
+```
+
+2. **Reports Collection** (`report_search_documents`):
+```javascript
+{
+  "fields": [
+    {
+      "type": "vector",
+      "path": "embedding",
+      "numDimensions": 768,
+      "similarity": "cosine"
+    },
+    {
+      "type": "filter",
+      "path": "patientId"  // Patient-specific search
+    }
+  ]
+}
+```
 
 ## Prerequisites
 
@@ -57,32 +200,20 @@ NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
 
 ## Database Setup
 
-### MongoDB Vector Search Indexes
+### MongoDB Atlas Setup
 
-Create these indexes in MongoDB Atlas:
-
-1. For document chunks collection (`document_chunks`):
-```javascript
-{
-  "fields": [
-    {
-      "type": "vector",
-      "path": "embedding",
-      "numDimensions": 768,
-      "similarity": "cosine"
-    }
-  ]
-}
-```
-
+1. Create vector search indexes (see MongoDB Indexes Configuration above)
 2. Initialize knowledge base:
+
 ```bash
 curl -X POST http://localhost:3000/api/initialize-vector-db -d '{"force": true}'
 ```
 
+This processes PDFs in `/data` directory and creates searchable chunks.
+
 ### Convex Setup
 
-Deploy Convex schema:
+Deploy schema:
 ```bash
 npx convex dev
 ```
@@ -94,106 +225,74 @@ Development:
 bun dev
 ```
 
-Production build:
+Production:
 ```bash
 bun run build
 bun start
 ```
 
-## Project Structure
+## API Usage Examples
 
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── vtma/analyze/       # Gemini 2.0 Flash image analysis
-│   │   ├── vector-search/      # MongoDB semantic search
-│   │   └── initialize-vector-db/
-│   ├── vtma/                   # Main application page
-│   └── patient/                # Patient management
-├── components/
-│   └── vtma/                   # VTMA-specific components
-└── lib/
-    ├── mongodb.ts              # Vector search implementation
-    └── i18n/                   # Dutch/English translations
-```
+### Analyze Thermographic Images
 
-## API Endpoints
-
-### Image Analysis
 ```bash
 POST /api/vtma/analyze
-Content-Type: application/json
-
 {
-  "images": ["base64_encoded_image"],
+  "images": ["base64_encoded_thermal_image"],
   "patientData": {
     "species": "paard",
-    "symptoms": ["staartzwiepen", "rugpijn"]
+    "primaryComplaint": "staartzwiepen tijdens rijden",
+    "symptoms": ["rugpijn", "verzet"]
   }
 }
 ```
 
-### Vector Search
+Response includes AAT-compliant sections with temperature findings.
+
+### Vector Search for Knowledge
+
 ```bash
 POST /api/vector-search
-Content-Type: application/json
-
 {
-  "query": "thermografie kissing spine",
-  "searchType": "documents",
-  "options": {"limit": 5}
+  "query": "kissing spine thermografie behandeling",
+  "searchType": "hybrid",
+  "options": {
+    "limit": 5,
+    "weightVector": 0.7  // 70% vector, 30% keyword
+  }
 }
 ```
 
-## Key Components
+Returns relevant document chunks with similarity scores.
 
-### Gemini Integration
+## How It Works
 
-Multimodal analysis directly with Gemini 2.0 Flash:
-```typescript
-const response = await genAI.models.generateContent({
-  model: 'gemini-2.0-flash',
-  contents: [
-    { text: analysisPrompt },
-    { inlineData: { mimeType: 'image/jpeg', data: base64Image }}
-  ]
-});
-```
-
-### MongoDB Vector Search
-
-Semantic search implementation:
-```typescript
-const pipeline = [{
-  $vectorSearch: {
-    index: "vector_index",
-    queryVector: embedding,
-    path: "embedding",
-    numCandidates: 50,
-    limit: 5
-  }
-}];
-```
-
-## Thermographic Analysis Features
-
-- Temperature asymmetry detection (≥1°C difference)
-- Bilateral symmetry comparison
-- Hotspot/coldspot identification
-- AAT-compliant report sections:
-  - Patient identification
-  - Examination protocol
-  - Thermographic findings
-  - Clinical interpretation
-  - Follow-up recommendations
+1. **Image Upload**: Thermographic images converted to base64
+2. **AI Analysis**: Gemini 2.0 Flash identifies thermal patterns
+3. **Knowledge Retrieval**: MongoDB vector search finds similar cases
+4. **Report Generation**: Structured output following AAT guidelines
+5. **Bilingual Support**: Auto-detection of Dutch/English content
 
 ## Performance
 
 - Report generation: 45 minutes → 5 minutes
-- Image processing: 2-3 seconds
-- Vector search: <500ms
-- Patient data sync: real-time via Convex
+- Gemini API response: 2-3 seconds
+- Vector search: <500ms for 58 documents
+- Patient sync: Real-time via Convex
+
+## Data Flow
+
+```
+Thermal Images → Gemini 2.0 Flash Vision
+                        ↓
+              Temperature Analysis
+                        ↓
+        MongoDB Vector Search (768D embeddings)
+                        ↓
+          Similar Cases + Knowledge Base
+                        ↓
+              AAT-Compliant Report
+```
 
 ## Browser Support
 
@@ -205,6 +304,6 @@ const pipeline = [{
 ## Data Privacy
 
 - Images processed in-memory only
-- Patient data stored in Convex with encryption
-- No image storage on servers
-- GDPR-compliant data handling
+- No permanent image storage
+- Patient data encrypted in Convex
+- GDPR-compliant handling
